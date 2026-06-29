@@ -59,7 +59,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"id":"01kwa119r0mfs3d4e4xs8bwyss","eventId":"01kwa119qw6vjdqanjjwzg4qhc","occurrenceId":null,"name":"VIP","description":"Laborum eius est dolor dolores minus voluptatem.","locationDetails":"Loges VIP avec vue directe","benefits":["\ud83c\udf7e Boissons offertes","\ud83c\udf7d\ufe0f Buffet inclus","\ud83d\ude97 Parking VIP"],"isFeatured":false,"sortOrder":96,"price":"50000.00","promotionalPrice":null,"currentPrice":50000,"hasActivePromotion":false,"discountPercentage":null,"promotionStartDate":null,"promotionEndDate":null,"quantity":274,"soldQuantity":119,"availableQuantity":155,"remainingTickets":155,"soldPercentage":43.43,"availabilityPercentage":56.57,"availabilityStatus":"available","availabilityStatusLabel":"Disponible","availabilityStatusColor":"green","availabilityStatusIcon":"\u2705","availabilityStatusBadgeClass":"badge-success","isAvailableForPurchase":true,"urgencyLevel":0,"saleStartDate":{"datetime":"2026-06-26T19:54:11.000000Z","humanDiff":"2 days ago","human":"Fri, Jun 26, 2026 7:54 PM"},"saleEndDate":{"datetime":"2026-07-17T14:06:27.000000Z","humanDiff":"2 weeks from now","human":"Fri, Jul 17, 2026 2:06 PM"},"createdAt":{"datetime":"2026-06-29T15:47:43.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:43.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}}'
+        content: '{"id":"01kwa2881kmjjkf3pbnjw7rdk4","eventId":"01kwa2881fsnkp9bexfxmyww4e","occurrenceId":null,"name":"VIP","description":"Laborum eius est dolor dolores minus voluptatem.","locationDetails":"Loges VIP avec vue directe","benefits":["\ud83c\udf7e Boissons offertes","\ud83c\udf7d\ufe0f Buffet inclus","\ud83d\ude97 Parking VIP"],"isFeatured":false,"sortOrder":96,"price":"50000.00","promotionalPrice":null,"currentPrice":50000,"hasActivePromotion":false,"discountPercentage":null,"promotionStartDate":null,"promotionEndDate":null,"quantity":274,"soldQuantity":119,"availableQuantity":155,"remainingTickets":155,"soldPercentage":43.43,"availabilityPercentage":56.57,"availabilityStatus":"available","availabilityStatusLabel":"Disponible","availabilityStatusColor":"green","availabilityStatusIcon":"\u2705","availabilityStatusBadgeClass":"badge-success","isAvailableForPurchase":true,"urgencyLevel":0,"saleStartDate":{"datetime":"2026-06-26T20:15:27.000000Z","humanDiff":"2 days ago","human":"Fri, Jun 26, 2026 8:15 PM"},"saleEndDate":{"datetime":"2026-07-17T14:27:43.000000Z","humanDiff":"2 weeks from now","human":"Fri, Jul 17, 2026 2:27 PM"},"createdAt":{"datetime":"2026-06-29T16:08:59.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:08 PM"},"updatedAt":{"datetime":"2026-06-29T16:08:59.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:08 PM"}}'
         headers: []
         description: ''
     responseFields: []
@@ -123,7 +123,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '[{"id":"01kwa119vmscekwyzd1rg2geyt","eventId":"01kwa119vdv44mg05mamk5fkmf","occurrenceId":null,"name":"VIP","description":"Laborum eius est dolor dolores minus voluptatem.","locationDetails":"Loges VIP avec vue directe","benefits":["\ud83c\udf7e Boissons offertes","\ud83c\udf7d\ufe0f Buffet inclus","\ud83d\ude97 Parking VIP"],"isFeatured":false,"sortOrder":96,"price":"50000.00","promotionalPrice":null,"currentPrice":50000,"hasActivePromotion":false,"discountPercentage":null,"promotionStartDate":null,"promotionEndDate":null,"quantity":274,"soldQuantity":119,"availableQuantity":155,"remainingTickets":155,"soldPercentage":43.43,"availabilityPercentage":56.57,"availabilityStatus":"available","availabilityStatusLabel":"Disponible","availabilityStatusColor":"green","availabilityStatusIcon":"\u2705","availabilityStatusBadgeClass":"badge-success","isAvailableForPurchase":true,"urgencyLevel":0,"saleStartDate":{"datetime":"2026-06-26T19:54:11.000000Z","humanDiff":"2 days ago","human":"Fri, Jun 26, 2026 7:54 PM"},"saleEndDate":{"datetime":"2026-07-17T14:06:27.000000Z","humanDiff":"2 weeks from now","human":"Fri, Jul 17, 2026 2:06 PM"},"createdAt":{"datetime":"2026-06-29T15:47:43.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:43.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}},{"id":"01kwa119xbsnt61sht2nddkh0q","eventId":"01kwa119x7va31abty1k4r4877","occurrenceId":null,"name":"\u00c9tudiant","description":"Sunt itaque culpa tempore quis velit eius qui vel.","locationDetails":"Places assises section \u00e9tudiants","benefits":["\ud83c\udf93 Tarif r\u00e9duit","\ud83c\udfab Entr\u00e9e g\u00e9n\u00e9rale"],"isFeatured":true,"sortOrder":87,"price":"50000.00","promotionalPrice":null,"currentPrice":50000,"hasActivePromotion":false,"discountPercentage":null,"promotionStartDate":null,"promotionEndDate":null,"quantity":155,"soldQuantity":36,"availableQuantity":119,"remainingTickets":119,"soldPercentage":23.23,"availabilityPercentage":76.77,"availabilityStatus":"available","availabilityStatusLabel":"Disponible","availabilityStatusColor":"green","availabilityStatusIcon":"\u2705","availabilityStatusBadgeClass":"badge-success","isAvailableForPurchase":true,"urgencyLevel":0,"saleStartDate":{"datetime":"2026-06-22T22:11:24.000000Z","humanDiff":"6 days ago","human":"Mon, Jun 22, 2026 10:11 PM"},"saleEndDate":{"datetime":"2026-07-16T00:05:25.000000Z","humanDiff":"2 weeks from now","human":"Thu, Jul 16, 2026 12:05 AM"},"createdAt":{"datetime":"2026-06-29T15:47:43.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:43.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}}]'
+        content: '[{"id":"01kwa2885dc4s637442a2w4f4y","eventId":"01kwa28857bebcmpzy4zms10qf","occurrenceId":null,"name":"VIP","description":"Laborum eius est dolor dolores minus voluptatem.","locationDetails":"Loges VIP avec vue directe","benefits":["\ud83c\udf7e Boissons offertes","\ud83c\udf7d\ufe0f Buffet inclus","\ud83d\ude97 Parking VIP"],"isFeatured":false,"sortOrder":96,"price":"50000.00","promotionalPrice":null,"currentPrice":50000,"hasActivePromotion":false,"discountPercentage":null,"promotionStartDate":null,"promotionEndDate":null,"quantity":274,"soldQuantity":119,"availableQuantity":155,"remainingTickets":155,"soldPercentage":43.43,"availabilityPercentage":56.57,"availabilityStatus":"available","availabilityStatusLabel":"Disponible","availabilityStatusColor":"green","availabilityStatusIcon":"\u2705","availabilityStatusBadgeClass":"badge-success","isAvailableForPurchase":true,"urgencyLevel":0,"saleStartDate":{"datetime":"2026-06-26T20:15:27.000000Z","humanDiff":"2 days ago","human":"Fri, Jun 26, 2026 8:15 PM"},"saleEndDate":{"datetime":"2026-07-17T14:27:43.000000Z","humanDiff":"2 weeks from now","human":"Fri, Jul 17, 2026 2:27 PM"},"createdAt":{"datetime":"2026-06-29T16:08:59.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:08 PM"},"updatedAt":{"datetime":"2026-06-29T16:08:59.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:08 PM"}},{"id":"01kwa28870jn0atsjv7z3cbfnp","eventId":"01kwa2886x61syn3j8b3y812gz","occurrenceId":null,"name":"\u00c9tudiant","description":"Sunt itaque culpa tempore quis velit eius qui vel.","locationDetails":"Places assises section \u00e9tudiants","benefits":["\ud83c\udf93 Tarif r\u00e9duit","\ud83c\udfab Entr\u00e9e g\u00e9n\u00e9rale"],"isFeatured":true,"sortOrder":87,"price":"50000.00","promotionalPrice":null,"currentPrice":50000,"hasActivePromotion":false,"discountPercentage":null,"promotionStartDate":null,"promotionEndDate":null,"quantity":155,"soldQuantity":36,"availableQuantity":119,"remainingTickets":119,"soldPercentage":23.23,"availabilityPercentage":76.77,"availabilityStatus":"available","availabilityStatusLabel":"Disponible","availabilityStatusColor":"green","availabilityStatusIcon":"\u2705","availabilityStatusBadgeClass":"badge-success","isAvailableForPurchase":true,"urgencyLevel":0,"saleStartDate":{"datetime":"2026-06-22T22:32:40.000000Z","humanDiff":"6 days ago","human":"Mon, Jun 22, 2026 10:32 PM"},"saleEndDate":{"datetime":"2026-07-16T00:26:41.000000Z","humanDiff":"2 weeks from now","human":"Thu, Jul 16, 2026 12:26 AM"},"createdAt":{"datetime":"2026-06-29T16:08:59.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:08 PM"},"updatedAt":{"datetime":"2026-06-29T16:08:59.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:08 PM"}}]'
         headers: []
         description: ''
     responseFields: []
@@ -308,7 +308,7 @@ endpoints:
         name: promotion_start_date
         description: 'This field is required when <code>promotional_price</code> is present. Must be a valid date.'
         required: false
-        example: '2026-06-29T15:47:43'
+        example: '2026-06-29T16:08:59'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -338,7 +338,7 @@ endpoints:
       is_featured: true
       sort_order: 10
       promotional_price: 1
-      promotion_start_date: '2026-06-29T15:47:43'
+      promotion_start_date: '2026-06-29T16:08:59'
       promotion_end_date: '2107-07-29'
     fileParameters: []
     responses:
@@ -563,7 +563,7 @@ endpoints:
         name: promotion_start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2026-06-29T15:47:43'
+        example: '2026-06-29T16:08:59'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -593,7 +593,7 @@ endpoints:
       is_featured: true
       sort_order: 10
       promotional_price: 1
-      promotion_start_date: '2026-06-29T15:47:43'
+      promotion_start_date: '2026-06-29T16:08:59'
       promotion_end_date: '2107-07-29'
     fileParameters: []
     responses:

@@ -147,7 +147,7 @@ endpoints:
         name: type
         description: ''
         required: false
-        example: success
+        example: warning
         type: string
         enumValues:
           - info
@@ -172,7 +172,7 @@ endpoints:
       user_id: consequatur
       title: mqeopfuudtdsufvyvddqa
       message: consequatur
-      type: success
+      type: warning
     fileParameters: []
     responses:
       -
