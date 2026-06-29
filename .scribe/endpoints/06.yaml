@@ -1,0 +1,440 @@
+name: Orders
+description: |-
+
+  APIs for managing orders (supports guest checkout)
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/orders
+    metadata:
+      custom: []
+      groupName: Orders
+      groupDescription: |-
+
+        APIs for managing orders (supports guest checkout)
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Create a new order (supports guest checkout)'
+      description: 'This endpoint handles atomic stock validation and supports guest purchases.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      user_id:
+        custom: []
+        name: user_id
+        description: 'Optional ULID of the authenticated user. If null, this is a guest checkout. Must match an existing stored value.'
+        required: false
+        example: 01HXE2K3M4N5P6Q7R8S9T0V1W2
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      first_name:
+        custom: []
+        name: first_name
+        description: 'First name of the buyer. Must not be greater than 255 characters.'
+        required: true
+        example: John
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      last_name:
+        custom: []
+        name: last_name
+        description: 'Last name of the buyer. Must not be greater than 255 characters.'
+        required: true
+        example: Doe
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'Email address of the buyer for ticket delivery. Must be a valid email address. Must not be greater than 255 characters.'
+        required: true
+        example: john.doe@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      phone:
+        custom: []
+        name: phone
+        description: 'Phone number of the buyer. Must not be greater than 255 characters.'
+        required: true
+        example: '+22890123456'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      delivery_method:
+        custom: []
+        name: delivery_method
+        description: 'How tickets will be delivered (email, whatsapp, both).'
+        required: true
+        example: email
+        type: string
+        enumValues:
+          - email
+          - whatsapp
+          - both
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      payment_method:
+        custom: []
+        name: payment_method
+        description: 'Optional payment method identifier. Must not be greater than 255 characters.'
+        required: false
+        example: stripe
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      coupon_code:
+        custom: []
+        name: coupon_code
+        description: 'Optional coupon code for discount. Must match an existing stored value.'
+        required: false
+        example: SUMMER2024
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      items:
+        custom: []
+        name: items
+        description: 'Array of order items (ticket types and quantities). Must have at least 1 items.'
+        required: true
+        example:
+          -
+            ticket_type_id: 01HXE2K3M4N5P6Q7R8S9T0V1W6
+            quantity: 2
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      'items[].ticket_type_id':
+        custom: []
+        name: 'items[].ticket_type_id'
+        description: 'Must match an existing stored value.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      'items[].quantity':
+        custom: []
+        name: 'items[].quantity'
+        description: 'Must be at least 1.'
+        required: true
+        example: 45
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      user_id: 01HXE2K3M4N5P6Q7R8S9T0V1W2
+      first_name: John
+      last_name: Doe
+      email: john.doe@example.com
+      phone: '+22890123456'
+      delivery_method: email
+      payment_method: stripe
+      coupon_code: SUMMER2024
+      items:
+        -
+          ticket_type_id: 01HXE2K3M4N5P6Q7R8S9T0V1W6
+          quantity: 2
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 201
+        content: |-
+          {
+            "success": true,
+            "message": "Commande créée avec succès.",
+            "data": {
+              "id": "01HXE2K3M4N5P6Q7R8S9T0V1W7",
+              "userId": null,
+              "firstName": "John",
+              "lastName": "Doe",
+              "email": "john@example.com",
+              "phone": "+22890123456",
+              "totalAmount": 100000,
+              "status": "pending",
+              "items": [
+                {
+                  "ticketTypeId": "01HXE2K3M4N5P6Q7R8S9T0V1W6",
+                  "quantity": 2,
+                  "unitPrice": 50000,
+                  "subtotal": 100000
+                }
+              ]
+            }
+          }
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 422
+        content: |-
+          {
+            "success": false,
+            "message": "Stock insuffisant pour \"VIP\". Disponible: 5, Demandé: 10"
+          }
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: 'api/v1/orders/{order_id}/cancel'
+    metadata:
+      custom: []
+      groupName: Orders
+      groupDescription: |-
+
+        APIs for managing orders (supports guest checkout)
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Cancel an order'
+      description: 'Cancels the order and releases stock back to availability.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      order_id:
+        custom: []
+        name: order_id
+        description: 'The ID of the order.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      order_id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "success": true,
+            "message": "Commande annulée avec succès.",
+            "data": {
+              "id": "01HXE2K3M4N5P6Q7R8S9T0V1W7",
+              "status": "cancelled"
+            }
+          }
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 422
+        content: |-
+          {
+            "success": false,
+            "message": "Cette commande est déjà annulée."
+          }
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/orders
+    metadata:
+      custom: []
+      groupName: Orders
+      groupDescription: |-
+
+        APIs for managing orders (supports guest checkout)
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'List orders'
+      description: |-
+        For authenticated users, returns their orders.
+        For admins, returns all orders.
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters:
+      status:
+        custom: []
+        name: status
+        description: 'Filter by status (pending, paid, cancelled, refunded).'
+        required: false
+        example: paid
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'Filter by buyer email.'
+        required: false
+        example: john@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanQueryParameters:
+      status: paid
+      email: john@example.com
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "success": true,
+            "message": "",
+            "data": [
+              {
+                "id": "01HXE2K3M4N5P6Q7R8S9T0V1W7",
+                "userId": null,
+                "firstName": "John",
+                "lastName": "Doe",
+                "fullName": "John Doe",
+                "email": "john@example.com",
+                "phone": "+22890123456",
+                "totalAmount": 100000,
+                "status": "pending",
+                "statusLabel": "En attente",
+                "paymentMethod": "stripe",
+                "deliveryMethod": "email",
+                "deliveryMethodLabel": "Email",
+                "itemsCount": 2,
+                "ticketsCount": 0,
+                "createdAt": "2024-01-15T10:00:00.000000Z"
+              }
+            ]
+          }
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/orders/{id}'
+    metadata:
+      custom: []
+      groupName: Orders
+      groupDescription: |-
+
+        APIs for managing orders (supports guest checkout)
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Show a single order'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the order.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "success": true,
+            "message": "",
+            "data": {
+              "id": "01HXE2K3M4N5P6Q7R8S9T0V1W7",
+              "userId": null,
+              "firstName": "John",
+              "lastName": "Doe",
+              "email": "john@example.com",
+              "phone": "+22890123456",
+              "totalAmount": 100000,
+              "status": "pending",
+              "items": [...],
+              "tickets": [...]
+            }
+          }
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null

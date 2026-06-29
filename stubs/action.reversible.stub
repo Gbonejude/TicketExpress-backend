@@ -1,0 +1,24 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Actions\Contracts\ReversibleAction;
+
+class {{ class }} implements ReversibleAction
+{
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function execute(array $data): mixed
+    {
+        //
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function rollback(array $data): void
+    {
+        //
+    }
+}

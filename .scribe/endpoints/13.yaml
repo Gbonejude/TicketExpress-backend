@@ -1,0 +1,593 @@
+name: 'User management'
+description: |-
+
+  APIs for managing users
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/users
+    metadata:
+      custom: []
+      groupName: 'User management'
+      groupDescription: |-
+
+        APIs for managing users
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'List Users'
+      description: 'Get a listing of the users.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '[{"id":"01kwa11a4k372nbwh9seyxee0w","email":"carolyne.luettgen@example.org","phone":"+1-850-772-8151","lastName":"Williamson","firstName":"Aurelia","fullName":"Aurelia Williamson","birthday":"1986-06-04","gender":"female","role":null,"address":"54954 Eduardo Fall Suite 098\nKacieview, AK 23144-7088","image":"http:\/\/localhost:8000\/storage\/38\/user.jpg","thumbnail":"http:\/\/localhost:8000\/storage\/38\/user.jpg","createdAt":{"datetime":"2026-06-29T15:47:43.000000Z","humanDiff":"1 second ago","human":"Mon, Jun 29, 2026 3:47 PM"}},{"id":"01kwa11a5y4k12v3pwskztm0b9","email":"tnitzsche@example.org","phone":"1-270-634-6063","lastName":"Kohler","firstName":"Chelsie","fullName":"Chelsie Kohler","birthday":"2022-04-01","gender":"male","role":null,"address":"8435 Alayna Squares Suite 143\nNew Micheal, MA 67733-5810","image":"http:\/\/localhost:8000\/storage\/39\/user.jpg","thumbnail":"http:\/\/localhost:8000\/storage\/39\/user.jpg","createdAt":{"datetime":"2026-06-29T15:47:43.000000Z","humanDiff":"1 second ago","human":"Mon, Jun 29, 2026 3:47 PM"}}]'
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/users
+    metadata:
+      custom: []
+      groupName: 'User management'
+      groupDescription: |-
+
+        APIs for managing users
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Store User'
+      description: 'Store a newly created resource in storage.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: multipart/form-data
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      last_name:
+        custom: []
+        name: last_name
+        description: 'The last name of the user. Must not be greater than 255 characters.'
+        required: true
+        example: Doe
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      first_name:
+        custom: []
+        name: first_name
+        description: 'The first name of the user. Must not be greater than 255 characters.'
+        required: true
+        example: John
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      birthday:
+        custom: []
+        name: birthday
+        description: 'The birth date of the user. Must be a valid date. Must be a date before <code>today</code>.'
+        required: false
+        example: '1990-01-01'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      gender:
+        custom: []
+        name: gender
+        description: 'The gender of the user.'
+        required: true
+        example: male
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      role:
+        custom: []
+        name: role
+        description: 'The role of the user. Must not be greater than 255 characters.'
+        required: true
+        example: admin
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'The email address of the user. Must be a valid email address. Must not be greater than 255 characters.'
+        required: false
+        example: johnny@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: 'The password for the user account. Must be at least 8 characters.'
+        required: false
+        example: password
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      phone:
+        custom: []
+        name: phone
+        description: 'The phone number of the user. Must match the regex /^([0-9\s\-\+\(\)]*)$/. Must be at least 8 characters. Must not be greater than 12 characters.'
+        required: true
+        example: '22893413639'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      image:
+        custom: []
+        name: image
+        description: 'The image of the user. Must be an image. Must not be greater than 2048 kilobytes.'
+        required: false
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      last_name: Doe
+      first_name: John
+      birthday: '1990-01-01'
+      gender: male
+      role: admin
+      email: johnny@example.com
+      password: password
+      phone: '22893413639'
+    fileParameters:
+      image: null
+    responses:
+      -
+        custom: []
+        status: 201
+        content: |-
+          {
+            "message": "User created successfully",
+            "data": {
+              "id": "01jkp5zz...",
+              "email": "user@example.com",
+              "lastName": "Doe",
+              "firstName": "John"
+            }
+          }
+        headers: []
+        description: Created
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/users/{id_id}'
+    metadata:
+      custom: []
+      groupName: 'User management'
+      groupDescription: |-
+
+        APIs for managing users
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Show User'
+      description: 'Show the specified resource.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id_id:
+        custom: []
+        name: id_id
+        description: 'The ID of the id.'
+        required: true
+        example: 01kw9vka70k3d4h29resr9d5y0
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      user:
+        custom: []
+        name: user
+        description: 'The ID of the user (ULID)'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id_id: 01kw9vka70k3d4h29resr9d5y0
+      user: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"id":"01kwa11aby4tskwh4ynrqvmrap","email":"russel.bert@example.net","phone":"+1 (779) 812-6447","lastName":"Ankunding","firstName":"Jerel","fullName":"Jerel Ankunding","birthday":"2006-03-11","gender":"male","role":null,"address":"62028 Trudie Mills\nNorth Cordie, IL 75592","image":"http:\/\/localhost:8000\/storage\/40\/user.jpg","thumbnail":"http:\/\/localhost:8000\/storage\/40\/user.jpg","createdAt":{"datetime":"2026-06-29T15:47:44.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+    uri: 'api/v1/users/{id_id}'
+    metadata:
+      custom: []
+      groupName: 'User management'
+      groupDescription: |-
+
+        APIs for managing users
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Update User'
+      description: 'Update the specified resource in storage.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: multipart/form-data
+      Accept: application/json
+    urlParameters:
+      id_id:
+        custom: []
+        name: id_id
+        description: 'The ID of the id.'
+        required: true
+        example: 01kw9vka70k3d4h29resr9d5y0
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      user:
+        custom: []
+        name: user
+        description: 'The ID of the user (ULID)'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id_id: 01kw9vka70k3d4h29resr9d5y0
+      user: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      last_name:
+        custom: []
+        name: last_name
+        description: 'The last name of the user. Must not be greater than 255 characters.'
+        required: false
+        example: Doe
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      first_name:
+        custom: []
+        name: first_name
+        description: 'The first name of the user. Must not be greater than 255 characters.'
+        required: false
+        example: John
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      birthday:
+        custom: []
+        name: birthday
+        description: 'The birth date of the user. Must be a valid date. Must be a date before <code>today</code>.'
+        required: false
+        example: '1990-01-01'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      gender:
+        custom: []
+        name: gender
+        description: 'The gender of the user.'
+        required: false
+        example: male
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      role:
+        custom: []
+        name: role
+        description: 'The role of the user. Must not be greater than 255 characters.'
+        required: false
+        example: admin
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      email:
+        custom: []
+        name: email
+        description: 'The email address of the user. Must be a valid email address. Must not be greater than 255 characters.'
+        required: false
+        example: johnny@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: 'The password for the user account. Must be at least 8 characters.'
+        required: false
+        example: password
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      phone:
+        custom: []
+        name: phone
+        description: 'The phone number of the user. Must match the regex /^([0-9\s\-\+\(\)]*)$/. Must be at least 8 characters. Must not be greater than 12 characters.'
+        required: false
+        example: '22893413639'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      image:
+        custom: []
+        name: image
+        description: 'The image of the user. Must be an image. Must not be greater than 2048 kilobytes.'
+        required: false
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address:
+        custom: []
+        name: address
+        description: ''
+        required: false
+        example: null
+        type: object
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      address.place_id:
+        custom: []
+        name: address.place_id
+        description: 'The unique identifier of the address.'
+        required: false
+        example: ChIJN1t_tDeuEmsRUsoyG83frY4
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address.place_name:
+        custom: []
+        name: address.place_name
+        description: 'The name of the place associated with the address. Must not be greater than 255 characters.'
+        required: false
+        example: 'Eiffel Tower'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address.longitude:
+        custom: []
+        name: address.longitude
+        description: 'The longitude of the address.'
+        required: false
+        example: 2.2945
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address.latitude:
+        custom: []
+        name: address.latitude
+        description: 'The latitude of the address.'
+        required: false
+        example: 48.8584
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address.street_name:
+        custom: []
+        name: address.street_name
+        description: 'The street name of the address. Must not be greater than 255 characters.'
+        required: false
+        example: 'Champ de Mars'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      address.phone:
+        custom: []
+        name: address.phone
+        description: 'A unique phone number associated with the address. Must match the regex /^([0-9\s\-\+\(\)]*)$/. Must be at least 8 characters. Must not be greater than 12 characters.'
+        required: false
+        example: '93078910'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      last_name: Doe
+      first_name: John
+      birthday: '1990-01-01'
+      gender: male
+      role: admin
+      email: johnny@example.com
+      password: password
+      phone: '22893413639'
+      address:
+        place_id: ChIJN1t_tDeuEmsRUsoyG83frY4
+        place_name: 'Eiffel Tower'
+        longitude: 2.2945
+        latitude: 48.8584
+        street_name: 'Champ de Mars'
+        phone: '93078910'
+    fileParameters:
+      image: null
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "message": "User updated successfully",
+            "data": {
+              "id": "01jkp5zz...",
+              "email": "user@example.com"
+            }
+          }
+        headers: []
+        description: Updated
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/users/{id_id}'
+    metadata:
+      custom: []
+      groupName: 'User management'
+      groupDescription: |-
+
+        APIs for managing users
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Delete User'
+      description: 'Delete the specified resource from storage.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id_id:
+        custom: []
+        name: id_id
+        description: 'The ID of the id.'
+        required: true
+        example: 01kw9vka70k3d4h29resr9d5y0
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      user:
+        custom: []
+        name: user
+        description: 'The ID of the user (ULID)'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id_id: 01kw9vka70k3d4h29resr9d5y0
+      user: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 204
+        content: ''
+        headers: []
+        description: Deleted
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null

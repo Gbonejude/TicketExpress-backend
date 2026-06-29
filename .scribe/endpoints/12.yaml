@@ -1,0 +1,183 @@
+name: Tickets
+description: |-
+
+  APIs for managing tickets and refunds
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: 'api/v1/tickets/{ticket_id}/refund'
+    metadata:
+      custom: []
+      groupName: Tickets
+      groupDescription: |-
+
+        APIs for managing tickets and refunds
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Refund a ticket'
+      description: |-
+        Request a refund for a ticket. Subject to refund policy:
+        - Must be at least 30 days before event
+        - No coupon was used on the order
+        - Automatic refund if event is cancelled
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      ticket_id:
+        custom: []
+        name: ticket_id
+        description: 'The ID of the ticket.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      ticket_id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      reason:
+        custom: []
+        name: reason
+        description: 'Optional reason for the refund request. Must not be greater than 500 characters.'
+        required: false
+        example: "Je ne peux plus assister à l'événement."
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      force_refund:
+        custom: []
+        name: force_refund
+        description: ''
+        required: false
+        example: false
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      reason: "Je ne peux plus assister à l'événement."
+      force_refund: false
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "success": true,
+            "message": "Ticket remboursé avec succès.",
+            "data": {
+              "id": "01HXE2K3M4N5P6Q7R8S9T0V1W8",
+              "ticketNumber": "TKT-2024-001",
+              "status": "refunded",
+              "statusLabel": "Remboursé",
+              "refundReason": "Demande de remboursement client",
+              "refundedAt": "2024-01-15T10:00:00.000000Z"
+            }
+          }
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 422
+        content: |-
+          {
+            "success": false,
+            "message": "Les remboursements doivent être demandés au moins 30 jours avant l'événement."
+          }
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: 'api/v1/tickets/{ticket_id}/check-in'
+    metadata:
+      custom: []
+      groupName: Tickets
+      groupDescription: |-
+
+        APIs for managing tickets and refunds
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Check in a ticket (scan QR code)'
+      description: |-
+        Scan and validate a ticket for event entry.
+        - Ticket must be ACTIVE
+        - Cannot scan twice
+        - Records who performed the check-in
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      ticket_id:
+        custom: []
+        name: ticket_id
+        description: 'The ID of the ticket.'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      ticket_id: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "success": true,
+            "message": "Ticket scanné avec succès.",
+            "data": {
+              "id": "01HXE2K3M4N5P6Q7R8S9T0V1W8",
+              "ticketNumber": "TKT-2024-001",
+              "status": "active",
+              "checkedIn": true,
+              "checkedInAt": "2024-01-15T10:00:00.000000Z",
+              "checkedInBy": "Staff #123"
+            }
+          }
+        headers: []
+        description: ''
+      -
+        custom: []
+        status: 422
+        content: |-
+          {
+            "success": false,
+            "message": "Ce ticket a déjà été scanné."
+          }
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null

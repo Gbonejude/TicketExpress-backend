@@ -1,0 +1,16 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Actions\Contracts\Action;
+
+class {{ class }} implements Action
+{
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function execute(array $data): mixed
+    {
+        //
+    }
+}

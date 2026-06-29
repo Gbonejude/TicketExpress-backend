@@ -1,0 +1,341 @@
+name: 'Event Categories'
+description: |-
+
+  APIs for managing event categories
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/categories
+    metadata:
+      custom: []
+      groupName: 'Event Categories'
+      groupDescription: |-
+
+        APIs for managing event categories
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'List Event Categories'
+      description: 'Get a listing of the event categories.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '[{"id":"01kwa117esf94t7z01rnmeeh7b","name":"Gala","slug":"gala-zFDBqI","createdAt":{"datetime":"2026-06-29T15:47:41.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:41.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}},{"id":"01kwa117f31v16629fen66as0k","name":"Conf\u00e9rence","slug":"conference-Vn1DjY","createdAt":{"datetime":"2026-06-29T15:47:41.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:41.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}}]'
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/categories/{id_id}'
+    metadata:
+      custom: []
+      groupName: 'Event Categories'
+      groupDescription: |-
+
+        APIs for managing event categories
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Show Event Category'
+      description: 'Show the specified resource.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id_id:
+        custom: []
+        name: id_id
+        description: 'The ID of the id.'
+        required: true
+        example: 01kw9ymd9xkadn1r29pevepvqq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      eventCategory:
+        custom: []
+        name: eventCategory
+        description: 'The ID of the event category (ULID)'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id_id: 01kw9ymd9xkadn1r29pevepvqq
+      eventCategory: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"id":"01kwa117fqbs4r98bs50bnb3cx","name":"Cin\u00e9ma","slug":"cinema-3bKo2J","createdAt":{"datetime":"2026-06-29T15:47:41.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:41.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/categories
+    metadata:
+      custom: []
+      groupName: 'Event Categories'
+      groupDescription: |-
+
+        APIs for managing event categories
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Store Event Category'
+      description: 'Store a newly created resource in storage.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'The name of the event category. Must not be greater than 255 characters.'
+        required: true
+        example: Music
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      slug:
+        custom: []
+        name: slug
+        description: 'The URL-friendly slug for the category. Must not be greater than 255 characters.'
+        required: true
+        example: music
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      name: Music
+      slug: music
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 201
+        content: |-
+          {
+            "message": "Event category created successfully",
+            "data": {
+              "id": "01jkp5zz...",
+              "name": "Music",
+              "slug": "music"
+            }
+          }
+        headers: []
+        description: Created
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+      - PATCH
+    uri: 'api/v1/categories/{id_id}'
+    metadata:
+      custom: []
+      groupName: 'Event Categories'
+      groupDescription: |-
+
+        APIs for managing event categories
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Update Event Category'
+      description: 'Update the specified resource in storage.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id_id:
+        custom: []
+        name: id_id
+        description: 'The ID of the id.'
+        required: true
+        example: 01kw9ymd9xkadn1r29pevepvqq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      eventCategory:
+        custom: []
+        name: eventCategory
+        description: 'The ID of the event category (ULID)'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id_id: 01kw9ymd9xkadn1r29pevepvqq
+      eventCategory: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'The name of the event category. Must not be greater than 255 characters.'
+        required: false
+        example: Music
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      slug:
+        custom: []
+        name: slug
+        description: 'The URL-friendly slug for the category. Must not be greater than 255 characters.'
+        required: false
+        example: music
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      name: Music
+      slug: music
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "message": "Event category updated successfully",
+            "data": {
+              "id": "01jkp5zz...",
+              "name": "Music Updated"
+            }
+          }
+        headers: []
+        description: Updated
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/v1/categories/{id_id}'
+    metadata:
+      custom: []
+      groupName: 'Event Categories'
+      groupDescription: |-
+
+        APIs for managing event categories
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Delete Event Category'
+      description: 'Delete the specified resource from storage.'
+      authenticated: false
+      deprecated: false
+    headers:
+      Accept-Language: en
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id_id:
+        custom: []
+        name: id_id
+        description: 'The ID of the id.'
+        required: true
+        example: 01kw9ymd9xkadn1r29pevepvqq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      eventCategory:
+        custom: []
+        name: eventCategory
+        description: 'The ID of the event category (ULID)'
+        required: true
+        example: consequatur
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id_id: 01kw9ymd9xkadn1r29pevepvqq
+      eventCategory: consequatur
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 204
+        content: ''
+        headers: []
+        description: Deleted
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
