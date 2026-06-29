@@ -1,0 +1,264 @@
+{
+  "info": {
+    "name": "TicketExpress - Critical Test Scenarios",
+    "description": "Critical user flows for testing with MCP fetch",
+    "version": "1.0.0",
+    "baseUrl": "http://localhost:8000"
+  },
+  "variables": {
+    "adminToken": "",
+    "clientToken": "",
+    "organizerToken": "",
+    "eventId": "",
+    "ticketTypeId": "",
+    "orderId": "",
+    "ticketId": ""
+  },
+  "scenarios": [
+    {
+      "id": "auth-admin",
+      "name": "Admin Authentication",
+      "method": "POST",
+      "endpoint": "/api/v1/auth/admin/login",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      "body": {
+        "email": "admin@ticketexpress.tg",
+        "password": "password"
+      },
+      "saveAs": "adminToken",
+      "expectedStatus": 200
+    },
+    {
+      "id": "auth-client-otp",
+      "name": "Client OTP Login",
+      "steps": [
+        {
+          "name": "Send OTP",
+          "method": "POST",
+          "endpoint": "/api/v1/auth/otp/send",
+          "body": {
+            "phone": "+22890123456"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "method": "POST",
+          "endpoint": "/api/v1/auth/otp/verify",
+          "body": {
+            "phone": "+22890123456",
+            "code": "000000"
+          },
+          "saveAs": "clientToken"
+        }
+      ]
+    },
+    {
+      "id": "create-event",
+      "name": "Create Event (Organizer)",
+      "method": "POST",
+      "endpoint": "/api/v1/events",
+      "requiresAuth": "organizerToken",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{organizerToken}}"
+      },
+      "body": {
+        "title": "Test Concert 2026",
+        "description": "Amazing test concert",
+        "event_category_id": "{{categoryId}}",
+        "venue_id": "{{venueId}}",
+        "start_date": "2026-12-31",
+        "start_time": "20:00:00",
+        "end_date": "2026-12-31",
+        "end_time": "23:59:00",
+        "is_featured": false
+      },
+      "saveAs": "eventId"
+    },
+    {
+      "id": "publish-event",
+      "name": "Publish Event",
+      "method": "POST",
+      "endpoint": "/api/v1/events/{{eventId}}/publish",
+      "requiresAuth": "organizerToken",
+      "expectedStatus": 200
+    },
+    {
+      "id": "create-ticket-type",
+      "name": "Create Ticket Type",
+      "method": "POST",
+      "endpoint": "/api/v1/ticket-types",
+      "requiresAuth": "organizerToken",
+      "body": {
+        "event_id": "{{eventId}}",
+        "name": "VIP",
+        "description": "VIP Access",
+        "price": 50000,
+        "quantity": 100,
+        "max_per_order": 5
+      },
+      "saveAs": "ticketTypeId"
+    },
+    {
+      "id": "create-order",
+      "name": "Create Order (Client)",
+      "method": "POST",
+      "endpoint": "/api/v1/orders",
+      "requiresAuth": "clientToken",
+      "body": {
+        "items": [
+          {
+            "ticket_type_id": "{{ticketTypeId}}",
+            "quantity": 2
+          }
+        ],
+        "delivery_method": "email"
+      },
+      "saveAs": "orderId"
+    },
+    {
+      "id": "list-orders",
+      "name": "List My Orders",
+      "method": "GET",
+      "endpoint": "/api/v1/orders",
+      "requiresAuth": "clientToken"
+    },
+    {
+      "id": "get-order",
+      "name": "Get Order Details",
+      "method": "GET",
+      "endpoint": "/api/v1/orders/{{orderId}}",
+      "requiresAuth": "clientToken"
+    },
+    {
+      "id": "check-in-ticket",
+      "name": "Check-in Ticket",
+      "method": "POST",
+      "endpoint": "/api/v1/tickets/{{ticketId}}/check-in",
+      "requiresAuth": "organizerToken",
+      "body": {
+        "checked_in_by": "Staff Member"
+      }
+    },
+    {
+      "id": "list-events",
+      "name": "List Public Events",
+      "method": "GET",
+      "endpoint": "/api/v1/events",
+      "queryParams": {
+        "status": "published",
+        "per_page": 20
+      }
+    },
+    {
+      "id": "get-event",
+      "name": "Get Event Details",
+      "method": "GET",
+      "endpoint": "/api/v1/events/{{eventId}}"
+    },
+    {
+      "id": "list-organizers",
+      "name": "List Organizers (Admin)",
+      "method": "GET",
+      "endpoint": "/api/v1/organizers",
+      "requiresAuth": "adminToken"
+    },
+    {
+      "id": "approve-organizer",
+      "name": "Approve Organizer (Admin)",
+      "method": "POST",
+      "endpoint": "/api/v1/organizers/{{organizerId}}/approve",
+      "requiresAuth": "adminToken"
+    },
+    {
+      "id": "create-coupon",
+      "name": "Create Coupon",
+      "method": "POST",
+      "endpoint": "/api/v1/coupons",
+      "requiresAuth": "organizerToken",
+      "body": {
+        "code": "TESTCODE2026",
+        "discount_type": "percentage",
+        "discount_value": 10,
+        "max_uses": 100,
+        "starts_at": "2026-06-01",
+        "expires_at": "2026-12-31"
+      }
+    },
+    {
+      "id": "create-review",
+      "name": "Create Event Review",
+      "method": "POST",
+      "endpoint": "/api/v1/reviews",
+      "requiresAuth": "clientToken",
+      "body": {
+        "event_id": "{{eventId}}",
+        "rating": 5,
+        "comment": "Excellent event!"
+      }
+    },
+    {
+      "id": "create-withdrawal",
+      "name": "Create Withdrawal Request",
+      "method": "POST",
+      "endpoint": "/api/v1/withdrawals",
+      "requiresAuth": "organizerToken",
+      "body": {
+        "amount": 50000,
+        "payment_method": "mobile_money",
+        "payment_details": {
+          "phone": "+22890123456",
+          "provider": "tmoney"
+        }
+      }
+    },
+    {
+      "id": "list-roles",
+      "name": "List Roles (Admin)",
+      "method": "GET",
+      "endpoint": "/api/v1/roles",
+      "requiresAuth": "adminToken"
+    },
+    {
+      "id": "list-permissions",
+      "name": "List Permissions (Admin)",
+      "method": "GET",
+      "endpoint": "/api/v1/permissions",
+      "requiresAuth": "adminToken"
+    },
+    {
+      "id": "create-venue",
+      "name": "Create Venue (Admin)",
+      "method": "POST",
+      "endpoint": "/api/v1/venues",
+      "requiresAuth": "adminToken",
+      "body": {
+        "name": "Test Stadium",
+        "address": "123 Main St",
+        "city": "Lomé",
+        "country": "Togo",
+        "capacity": 10000
+      }
+    },
+    {
+      "id": "cancel-order",
+      "name": "Cancel Order",
+      "method": "POST",
+      "endpoint": "/api/v1/orders/{{orderId}}/cancel",
+      "requiresAuth": "clientToken"
+    }
+  ],
+  "usage": {
+    "description": "How to use these test scenarios",
+    "instructions": [
+      "1. Start your Laravel server: php artisan serve",
+      "2. Run database seeder: php artisan db:seed --class=TestUsersSeeder",
+      "3. Use MCP fetch tool to execute scenarios",
+      "4. Tokens are automatically saved and reused",
+      "5. Variables like {{eventId}} are replaced automatically"
+    ]
+  }
+}
