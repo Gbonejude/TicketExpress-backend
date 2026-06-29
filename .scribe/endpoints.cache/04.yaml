@@ -265,7 +265,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"id":"01kwa118dnzzjfhafwqewn9kxd","eventId":"01kwa118djmzhmydmxzz60jrwn","startDate":{"datetime":"2026-08-17T23:01:43.000000Z","humanDiff":"1 month from now","human":"Mon, Aug 17, 2026 11:01 PM"},"endDate":{"datetime":"2026-08-18T05:01:43.000000Z","humanDiff":"1 month from now","human":"Tue, Aug 18, 2026 5:01 AM"},"maxAttendees":null,"currentAttendees":0,"remainingCapacity":null,"availabilityPercentage":100,"status":"active","isSoldOut":false,"isActive":true,"notes":null,"createdAt":{"datetime":"2026-06-29T15:47:42.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:42.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}}'
+        content: '{"id":"01kwa286v032s8qym869drw86s","eventId":"01kwa286ttcxnq1kdfwd1fzg77","startDate":{"datetime":"2026-08-17T23:22:59.000000Z","humanDiff":"1 month from now","human":"Mon, Aug 17, 2026 11:22 PM"},"endDate":{"datetime":"2026-08-18T05:22:59.000000Z","humanDiff":"1 month from now","human":"Tue, Aug 18, 2026 5:22 AM"},"maxAttendees":null,"currentAttendees":0,"remainingCapacity":null,"availabilityPercentage":100,"status":"active","isSoldOut":false,"isActive":true,"notes":null,"createdAt":{"datetime":"2026-06-29T16:08:58.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:08 PM"},"updatedAt":{"datetime":"2026-06-29T16:08:58.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:08 PM"}}'
         headers: []
         description: ''
     responseFields: []

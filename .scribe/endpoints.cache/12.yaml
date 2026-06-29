@@ -62,7 +62,7 @@ endpoints:
         name: force_refund
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -70,7 +70,7 @@ endpoints:
         deprecated: false
     cleanBodyParameters:
       reason: "Je ne peux plus assister à l'événement."
-      force_refund: false
+      force_refund: true
     fileParameters: []
     responses:
       -

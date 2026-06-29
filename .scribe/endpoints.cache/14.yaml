@@ -37,7 +37,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '[{"id":"01kwa11ahnrnbjh6k4be9v5cv2","name":"Hotel 2 F\u00e9vrier","address":"65570 Odessa Crest Suite 150","city":"Lom\u00e9","country":"Togo","capacity":500,"latitude":"6.12560000","longitude":"1.23190000","createdAt":{"datetime":"2026-06-29T15:47:44.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:44.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}},{"id":"01kwa11aj0rdr05e7tpw8x39x2","name":"H\u00f4tel Sarakawa","address":"98151 Carter Cove Suite 012","city":"Lom\u00e9","country":"Togo","capacity":800,"latitude":"6.13530000","longitude":"1.21640000","createdAt":{"datetime":"2026-06-29T15:47:44.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:44.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}}]'
+        content: '[{"id":"01kwa288pebbc39at78y3s4t2r","name":"Hotel 2 F\u00e9vrier","address":"65570 Odessa Crest Suite 150","city":"Lom\u00e9","country":"Togo","capacity":500,"latitude":"6.12560000","longitude":"1.23190000","createdAt":{"datetime":"2026-06-29T16:09:00.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:09 PM"},"updatedAt":{"datetime":"2026-06-29T16:09:00.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:09 PM"}},{"id":"01kwa288ppafsg8dtmvhmcyvvq","name":"H\u00f4tel Sarakawa","address":"98151 Carter Cove Suite 012","city":"Lom\u00e9","country":"Togo","capacity":800,"latitude":"6.13530000","longitude":"1.21640000","createdAt":{"datetime":"2026-06-29T16:09:00.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:09 PM"},"updatedAt":{"datetime":"2026-06-29T16:09:00.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:09 PM"}}]'
         headers: []
         description: ''
     responseFields: []
@@ -101,7 +101,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"id":"01kwa11amgrr75edcadj2b851m","name":"Hotel 2 F\u00e9vrier","address":"65570 Odessa Crest Suite 150","city":"Lom\u00e9","country":"Togo","capacity":500,"latitude":"6.12560000","longitude":"1.23190000","createdAt":{"datetime":"2026-06-29T15:47:44.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"},"updatedAt":{"datetime":"2026-06-29T15:47:44.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 3:47 PM"}}'
+        content: '{"id":"01kwa288qbe5c9b9k4759n0jt9","name":"Hotel 2 F\u00e9vrier","address":"65570 Odessa Crest Suite 150","city":"Lom\u00e9","country":"Togo","capacity":500,"latitude":"6.12560000","longitude":"1.23190000","createdAt":{"datetime":"2026-06-29T16:09:00.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:09 PM"},"updatedAt":{"datetime":"2026-06-29T16:09:00.000000Z","humanDiff":"0 seconds ago","human":"Mon, Jun 29, 2026 4:09 PM"}}'
         headers: []
         description: ''
     responseFields: []
