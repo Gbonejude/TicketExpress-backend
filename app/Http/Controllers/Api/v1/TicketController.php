@@ -10,8 +10,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Ticket\RefundTicketRequest;
 use App\Http\Resources\V1\TicketResource;
 use App\Models\Ticket;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * @group Tickets
@@ -24,6 +26,51 @@ final class TicketController extends Controller
         private readonly RefundTicketAction $refundTicketAction,
         private readonly CheckInTicketAction $checkInTicketAction,
     ) {}
+
+    /**
+     * List issued tickets
+     *
+     * Back-office listing of issued tickets with their status.
+     *
+     * @queryParam status string Filter by status (valid, used, cancelled, refunded). Example: valid
+     * @queryParam event_id string Only tickets for this event. Example: 01HXE...
+     * @queryParam search string Match ticket number, attendee name or email. Example: TKT-2024
+     */
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $query = Ticket::query()
+            ->with(['ticketType.event', 'order'])
+            ->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        // Scanned (checked-in) vs not-yet-scanned tickets.
+        if ($request->filled('checked_in')) {
+            filter_var($request->input('checked_in'), FILTER_VALIDATE_BOOLEAN)
+                ? $query->whereNotNull('checked_in_at')
+                : $query->whereNull('checked_in_at');
+        }
+
+        if ($request->filled('event_id')) {
+            $query->whereHas('ticketType', function (Builder $q) use ($request): void {
+                $q->where('event_id', $request->input('event_id'));
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
+
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('ticket_number', 'like', "%{$search}%")
+                    ->orWhere('attendee_name', 'like', "%{$search}%")
+                    ->orWhere('attendee_email', 'like', "%{$search}%");
+            });
+        }
+
+        return TicketResource::collection($query->paginate(15));
+    }
 
     /**
      * Check in a ticket (scan QR code)
@@ -57,6 +104,8 @@ final class TicketController extends Controller
                 'ticket' => $ticket,
                 'checked_in_by' => $request->input('checked_in_by'),
             ]);
+
+            \App\Events\ResourceChangedEvent::dispatch('tickets', 'checked-in', $checkedInTicket->id);
 
             return $this->success(
                 data: new TicketResource($checkedInTicket),

@@ -5,15 +5,53 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\V1\TicketDownloadResource;
 use App\Models\Ticket;
 use App\Models\TicketDownloadLink;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 final class TicketDownloadController extends Controller
 {
+    /**
+     * List ticket downloads
+     *
+     * Back-office listing of the ticket-download links generated per order,
+     * with how many times each was downloaded and its validity.
+     *
+     * @queryParam state string Filter by state (valid, expired, limit_reached). Example: valid
+     * @queryParam search string Match the order number. Example: ORD-2026
+     */
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $now = now();
+
+        $query = TicketDownloadLink::query()
+            ->with('order')
+            ->latest();
+
+        match ($request->input('state')) {
+            'valid' => $query->where('expires_at', '>', $now)->whereColumn('download_count', '<', 'max_downloads'),
+            'expired' => $query->where('expires_at', '<=', $now),
+            'limit_reached' => $query->whereColumn('download_count', '>=', 'max_downloads'),
+            default => null,
+        };
+
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
+
+            $query->whereHas('order', function (Builder $q) use ($search): void {
+                $q->where('order_number', 'like', "%{$search}%");
+            });
+        }
+
+        return TicketDownloadResource::collection($query->paginate(15));
+    }
     /**
      * Download ticket PDF.
      */

@@ -10,6 +10,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -113,6 +114,17 @@ final class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function organizer(): HasOne
     {
         return $this->hasOne(related: Organizer::class);
+    }
+
+    /**
+     * Events this user has marked as favorite.
+     *
+     * @return BelongsToMany<Event, $this>
+     */
+    public function favoriteEvents(): BelongsToMany
+    {
+        return $this->belongsToMany(related: Event::class, table: 'event_favorites')
+            ->withTimestamps();
     }
 
     /**

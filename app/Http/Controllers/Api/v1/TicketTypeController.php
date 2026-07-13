@@ -14,6 +14,7 @@ use App\Http\Resources\V1\TicketTypeResource;
 use App\Models\Event;
 use App\Models\TicketType;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * @group Ticket Types
@@ -35,11 +36,11 @@ final class TicketTypeController extends Controller
      *
      * @apiResourceModel \App\Models\TicketType
      */
-    public function index(Event $event): JsonResponse
+    public function index(Event $event): AnonymousResourceCollection
     {
-        $ticketTypes = $event->ticketTypes()->latest()->get();
+        $ticketTypes = $event->ticketTypes()->latest()->paginate(15);
 
-        return $this->success(TicketTypeResource::collection($ticketTypes));
+        return TicketTypeResource::collection($ticketTypes);
     }
 
     /**

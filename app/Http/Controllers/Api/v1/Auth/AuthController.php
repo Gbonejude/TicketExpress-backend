@@ -22,6 +22,7 @@ use App\Http\Requests\V1\Auth\RegisterOrganizerManagerRequest;
 use App\Http\Requests\V1\Auth\SendOtpRequest;
 use App\Http\Requests\V1\Auth\VerifyOtpRequest;
 use App\Http\Resources\V1\UserResource;
+use App\Support\AbilityRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -193,7 +194,7 @@ final class AuthController extends Controller
         return $this->success([
             'accessToken' => $token,
             'userData' => new UserResource($user),
-            'userAbilityRules' => [['action' => 'manage', 'subject' => 'all']],
+            'userAbilityRules' => AbilityRules::for($user),
         ], 'Login successful.');
     }
 

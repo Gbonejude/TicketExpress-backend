@@ -9,7 +9,9 @@ use App\Enums\WithdrawalStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Withdrawal\StoreWithdrawalRequest;
 use App\Http\Resources\V1\WithdrawalResource;
+use App\Models\Organizer;
 use App\Models\Withdrawal;
+use App\Support\Commission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -65,6 +67,30 @@ final class WithdrawalController extends Controller
         $withdrawals = $query->paginate(15);
 
         return WithdrawalResource::collection($withdrawals);
+    }
+
+    /**
+     * Organizer earnings & balance
+     *
+     * Returns the organizer's gross ticket revenue, the 5% platform commission,
+     * the net revenue, what has already been withdrawn and the amount still
+     * available for withdrawal.
+     *
+     * @urlParam organizer string required The organizer ULID.
+     */
+    public function earnings(string $organizerId): JsonResponse
+    {
+        $organizer = Organizer::findOrFail($organizerId);
+
+        return $this->success([
+            'organizerId' => $organizer->id,
+            'grossRevenue' => $organizer->grossRevenue(),
+            'commissionRate' => Commission::rate(),
+            'commissionAmount' => $organizer->platformCommission(),
+            'netRevenue' => $organizer->netRevenue(),
+            'totalWithdrawn' => $organizer->totalWithdrawn(),
+            'availableBalance' => $organizer->availableBalance(),
+        ]);
     }
 
     /**

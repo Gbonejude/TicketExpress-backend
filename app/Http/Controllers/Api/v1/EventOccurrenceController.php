@@ -54,7 +54,7 @@ final class EventOccurrenceController extends Controller
         $occurrences = $event->occurrences()
             ->with('ticketTypes')
             ->orderBy('start_date')
-            ->get();
+            ->paginate(15);
 
         return EventOccurrenceResource::collection($occurrences);
     }

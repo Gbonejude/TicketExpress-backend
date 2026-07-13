@@ -31,6 +31,8 @@ final class OrganizerResource extends JsonResource
             'website' => $this->website,
             'status' => $this->status->value,
             'statusLabel' => $this->status->label(),
+            'isActive' => (bool) $this->is_active,
+            'rejectionReason' => $this->rejection_reason,
             'user' => new UserResource($this->whenLoaded('user')),
             'eventsCount' => $this->whenCounted('events'),
             'createdAt' => new DateTimeResource(

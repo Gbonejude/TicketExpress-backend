@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\Me;
 use App\Enums\Screen;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\UserResource;
+use App\Support\AbilityRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -63,6 +64,7 @@ final class MeController extends Controller
         return $this->success([
             'user' => new UserResource($user),
             'screens' => $screens,
+            'userAbilityRules' => AbilityRules::for($user),
         ]);
     }
 }

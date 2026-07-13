@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function (): void {
     // Custom routes BEFORE apiResource
+    Route::get('withdrawals/earnings/{organizer}', [WithdrawalController::class, 'earnings'])->whereUlid('organizer')->name('withdrawals.earnings');
     Route::post('withdrawals/{id}/process', [WithdrawalController::class, 'process'])->whereUlid('id')->name('withdrawals.process');
 
     Route::apiResource('withdrawals', WithdrawalController::class)

@@ -12,7 +12,10 @@ use App\Http\Requests\V1\EventCategory\StoreEventCategoryRequest;
 use App\Http\Requests\V1\EventCategory\UpdateEventCategoryRequest;
 use App\Http\Resources\V1\EventCategoryResource;
 use App\Models\EventCategory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * @group Event Categories
@@ -32,14 +35,24 @@ final class EventCategoryController extends Controller
      *
      * @apiResourceModel \App\Models\EventCategory
      */
-    public function index(): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $categories = EventCategory::query()
+        $query = EventCategory::query()
             ->withCount('events')
-            ->latest()
-            ->get();
+            ->latest();
 
-        return $this->success(EventCategoryResource::collection($categories));
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
+
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        $categories = $query->paginate(15);
+
+        return EventCategoryResource::collection($categories);
     }
 
     /**

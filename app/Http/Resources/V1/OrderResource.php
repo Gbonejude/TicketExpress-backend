@@ -7,6 +7,7 @@ namespace App\Http\Resources\V1;
 use App\Http\Resources\DateTimeResource;
 use App\Models\Order;
 use App\Services\TicketDownloadService;
+use App\Support\Commission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -54,6 +55,9 @@ final class OrderResource extends JsonResource
             'email' => $this->email,
             'phone' => $this->phone,
             'totalAmount' => $this->total_amount,
+            'commissionRate' => Commission::rate(),
+            'commissionAmount' => Commission::amountFor((float) $this->total_amount),
+            'netAmount' => Commission::netFor((float) $this->total_amount),
             'status' => $this->resource->status->value,
             'statusLabel' => $this->resource->status->label(),
             'paymentMethod' => $this->payment_method,

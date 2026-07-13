@@ -140,6 +140,13 @@ final class CreateOrderAction implements Action
             // Dispatch OrderCreatedEvent AFTER transaction commit
             event(new OrderCreatedEvent($order));
 
+            // Real-time (silent) refresh signals for the back-office lists.
+            DB::afterCommit(function () use ($order): void {
+                \App\Events\ResourceChangedEvent::dispatch('orders', 'created', $order->id);
+                \App\Events\ResourceChangedEvent::dispatch('tickets', 'created', null);
+                \App\Events\ResourceChangedEvent::dispatch('payments', 'created', null);
+            });
+
             return $order;
         });
     }
