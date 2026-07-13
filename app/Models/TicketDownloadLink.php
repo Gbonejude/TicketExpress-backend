@@ -14,16 +14,6 @@ final class TicketDownloadLink extends Model
 {
     use HasUlids;
 
-    public string $token;
-
-    public string $order_id;
-
-    public Carbon $expires_at;
-
-    public int $download_count = 0;
-
-    public int $max_downloads = 50;
-
     /**
      * @var list<string>
      */

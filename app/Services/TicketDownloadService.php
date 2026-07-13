@@ -123,7 +123,7 @@ final class TicketDownloadService
         }
 
         $message .= "🎫 *Tickets:* {$order->items->sum('quantity')}\n";
-        $message .= '💰 *Total:* '.number_format($order->total_amount, 0, ',', ' ')." XOF\n\n";
+        $message .= '💰 *Total:* '.number_format((float) $order->total_amount, 0, ',', ' ')." XOF\n\n";
         $message .= "🔢 *Commande:* #{$order->order_number}\n\n";
         $message .= "📥 *Téléchargez vos tickets:*\n";
         $message .= "{$downloadUrl}\n\n";

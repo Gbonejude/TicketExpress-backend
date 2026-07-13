@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Back-office listing of ticket-download links (screen.tickets).
+Route::middleware(['auth:sanctum', 'role_or_permission:super-admin|screen.tickets'])
+    ->group(function (): void {
+        Route::get('/ticket-downloads', [TicketDownloadController::class, 'index'])->name('ticket-downloads.index');
+    });
+
 // Download ticket PDF (public with token)
 Route::get('/tickets/download/{token}', [TicketDownloadController::class, 'downloadPdf'])
     ->name('tickets.download.pdf');

@@ -9,11 +9,18 @@ use App\Actions\V1\Event\DeleteEventAction;
 use App\Actions\V1\Event\PublishEventAction;
 use App\Actions\V1\Event\UpdateEventAction;
 use App\Enums\EventStatus;
+use App\Enums\OrderStatus;
+use App\Events\ResourceChangedEvent;
 use App\Http\Controllers\Controller;
+use App\Models\OrderItem;
+use App\Models\Ticket;
+use App\Models\TicketType;
+use App\Support\Commission;
 use App\Http\Requests\V1\Event\StoreEventRequest;
 use App\Http\Requests\V1\Event\UpdateEventRequest;
 use App\Http\Resources\V1\EventResource;
 use App\Models\Event;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -64,8 +71,16 @@ final class EventController extends Controller
     {
         $query = Event::query()
             ->with(['category', 'venue', 'organizer'])
-            ->withCount(['ticketTypes', 'reviews'])
+            ->withCount(['ticketTypes', 'reviews', 'favoritedBy'])
             ->latest();
+
+        // Client side (unauthenticated): hide events of deactivated organizers.
+        // Back-office users still see everything.
+        if ($request->user() === null) {
+            $query->whereHas('organizer', function (Builder $q): void {
+                $q->where('is_active', true);
+            });
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -105,6 +120,8 @@ final class EventController extends Controller
         $validated = $request->validated();
 
         $event = $action->execute($validated);
+
+        ResourceChangedEvent::dispatch('events', 'created', $event->id, $event->title);
 
         return $this->created(new EventResource($event));
     }
@@ -175,6 +192,8 @@ final class EventController extends Controller
 
         $updated = $action->execute($data);
 
+        ResourceChangedEvent::dispatch('events', 'updated', $updated->id, $updated->title);
+
         return $this->success(new EventResource($updated));
     }
 
@@ -191,7 +210,10 @@ final class EventController extends Controller
      */
     public function destroy(Event $id, DeleteEventAction $action): JsonResponse
     {
+        $eventId = $id->id;
         $action->execute(['event' => $id]);
+
+        ResourceChangedEvent::dispatch('events', 'deleted', $eventId);
 
         return $this->noContent();
     }
@@ -217,6 +239,8 @@ final class EventController extends Controller
     {
         try {
             $published = $action->execute(['event' => $id]);
+
+            ResourceChangedEvent::dispatch('events', 'updated', $published->id, $published->title);
 
             return $this->success(new EventResource($published));
         } catch (\DomainException $e) {
@@ -244,6 +268,8 @@ final class EventController extends Controller
     {
         $id->update(['status' => EventStatus::DRAFT]);
 
+        ResourceChangedEvent::dispatch('events', 'updated', $id->id, $id->title);
+
         return $this->success(
             data: new EventResource($id),
             message: 'Événement dépublié avec succès.',
@@ -267,9 +293,67 @@ final class EventController extends Controller
     {
         $id->update(['status' => EventStatus::CANCELLED]);
 
+        ResourceChangedEvent::dispatch('events', 'updated', $id->id, $id->title);
+
         return $this->success(
             data: new EventResource($id),
             message: 'Événement annulé avec succès.',
         );
+    }
+
+    /**
+     * Event box-office report
+     *
+     * Per ticket type: max quantity, sold, scanned (checked-in), not scanned,
+     * not sold, revenue and the TicketExpress commission — plus event totals.
+     *
+     * @urlParam event string required The ID of the event (ULID)
+     */
+    public function stats(Event $id): JsonResponse
+    {
+        $ticketTypes = $id->ticketTypes()->get();
+
+        $rows = $ticketTypes->map(function (TicketType $tt): array {
+            $sold = Ticket::query()->where('ticket_type_id', $tt->id)->count();
+            $scanned = Ticket::query()->where('ticket_type_id', $tt->id)->whereNotNull('checked_in_at')->count();
+            $revenue = (float) OrderItem::query()
+                ->where('ticket_type_id', $tt->id)
+                ->whereHas('order', fn ($q) => $q->where('status', OrderStatus::PAID->value))
+                ->sum('subtotal');
+
+            return [
+                'ticketTypeId' => $tt->id,
+                'name' => $tt->name,
+                'price' => (float) $tt->price,
+                'quantity' => (int) $tt->quantity,
+                'sold' => $sold,
+                'scanned' => $scanned,
+                'notScanned' => max(0, $sold - $scanned),
+                'notSold' => max(0, (int) $tt->quantity - $sold),
+                'revenue' => round($revenue, 2),
+                'commission' => Commission::amountFor($revenue),
+                'netRevenue' => Commission::netFor($revenue),
+            ];
+        })->values();
+
+        return $this->success([
+            'event' => [
+                'id' => $id->id,
+                'title' => $id->title,
+                'maxAttendees' => $id->max_attendees,
+            ],
+            'commissionRate' => Commission::rate(),
+            'ticketTypes' => $rows,
+            'totals' => [
+                'quantity' => (int) $rows->sum('quantity'),
+                'sold' => (int) $rows->sum('sold'),
+                'scanned' => (int) $rows->sum('scanned'),
+                'notScanned' => (int) $rows->sum('notScanned'),
+                'notSold' => (int) $rows->sum('notSold'),
+                'revenue' => round((float) $rows->sum('revenue'), 2),
+                'commission' => round((float) $rows->sum('commission'), 2),
+                'netRevenue' => round((float) $rows->sum('netRevenue'), 2),
+            ],
+        ]);
     }
 }

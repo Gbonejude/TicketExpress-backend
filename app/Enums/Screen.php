@@ -7,45 +7,91 @@ namespace App\Enums;
 enum Screen: string
 {
     case DASHBOARD = 'dashboard';
-    case USERS = 'users';
-    case CUSTOMERS = 'customers';
-    case DRIVERS = 'drivers';
-    case INTERNAL_DRIVERS = 'internal_drivers';
-    case ONLINE_DRIVERS = 'online_drivers';
-    case ORGANIZERS = 'organizers';
     case EVENTS = 'events';
+    case BOOKINGS = 'bookings';
+    case TICKETS = 'tickets';
+    case PROMOTIONS = 'promotions';
+    case PAYMENTS = 'payments';
+    case COUPONS = 'coupons';
+    case ORGANIZERS = 'organizers';
     case VENUES = 'venues';
     case CATEGORIES = 'categories';
-    case COUPONS = 'coupons';
-    case TICKETS = 'tickets';
-    case BOOKINGS = 'bookings';
     case REVIEWS = 'reviews';
+    case WITHDRAWALS = 'withdrawals';
+    case USERS = 'users';
+    case NOTIFICATIONS = 'notifications';
     case ADMINISTRATORS = 'administrators';
 
     public function label(): string
     {
         return match ($this) {
-            self::DASHBOARD => 'Dashboard',
-            self::USERS => 'Users',
-            self::CUSTOMERS => 'Customers',
-            self::DRIVERS => 'Drivers',
-            self::INTERNAL_DRIVERS => 'Internal Drivers',
-            self::ONLINE_DRIVERS => 'Online Drivers',
-            self::ORGANIZERS => 'Organizers',
-            self::EVENTS => 'Events',
-            self::VENUES => 'Venues',
-            self::CATEGORIES => 'Categories',
+            self::DASHBOARD => 'Tableau de bord',
+            self::EVENTS => 'Événements',
+            self::BOOKINGS => 'Commandes',
+            self::TICKETS => 'Billetterie',
+            self::PROMOTIONS => 'Promotions',
+            self::PAYMENTS => 'Paiements',
             self::COUPONS => 'Coupons',
-            self::TICKETS => 'Tickets',
-            self::BOOKINGS => 'Bookings',
-            self::REVIEWS => 'Reviews',
-            self::ADMINISTRATORS => 'Administrators',
+            self::ORGANIZERS => 'Organisateurs',
+            self::VENUES => 'Lieux',
+            self::CATEGORIES => 'Catégories',
+            self::REVIEWS => 'Avis',
+            self::WITHDRAWALS => 'Retraits',
+            self::USERS => 'Utilisateurs',
+            self::NOTIFICATIONS => 'Notifications',
+            self::ADMINISTRATORS => 'Administrateurs',
         };
     }
 
     public function permission(): string
     {
         return 'screen.'.$this->value;
+    }
+
+    /**
+     * The CRUD actions that make sense for this screen (beyond simply viewing
+     * it). Read-only screens return an empty list.
+     *
+     * @return array<int, string>
+     */
+    public function actions(): array
+    {
+        return match ($this) {
+            self::EVENTS,
+            self::TICKETS,
+            self::PROMOTIONS,
+            self::COUPONS,
+            self::VENUES,
+            self::CATEGORIES,
+            self::USERS,
+            self::ADMINISTRATORS => ['create', 'update', 'delete'],
+            self::ORGANIZERS => ['update', 'delete'],
+            self::REVIEWS => ['delete'],
+            default => [],
+        };
+    }
+
+    /**
+     * Permission names for this screen's actions (e.g. `events.create`).
+     *
+     * @return array<int, string>
+     */
+    public function actionPermissions(): array
+    {
+        return array_map(fn (string $a): string => $this->value.'.'.$a, $this->actions());
+    }
+
+    /**
+     * Every action permission across all screens.
+     *
+     * @return array<int, string>
+     */
+    public static function allActionPermissions(): array
+    {
+        return array_merge(...array_map(
+            static fn (self $s): array => $s->actionPermissions(),
+            self::cases(),
+        ));
     }
 
     /**
@@ -65,7 +111,7 @@ enum Screen: string
     }
 
     /**
-     * @return array<int, array{key: string, label: string, permission: string}>
+     * @return array<int, array{key: string, label: string, permission: string, actions: array<int, string>}>
      */
     public static function catalogue(): array
     {
@@ -73,6 +119,7 @@ enum Screen: string
             'key' => $s->value,
             'label' => $s->label(),
             'permission' => $s->permission(),
+            'actions' => $s->actions(),
         ], self::cases());
     }
 
@@ -83,9 +130,30 @@ enum Screen: string
      */
     public static function defaultAdminScreens(): array
     {
-        return array_filter(
+        return array_values(array_filter(
             self::cases(),
             static fn (self $screen): bool => $screen !== self::ADMINISTRATORS,
-        );
+        ));
+    }
+
+    /**
+     * Default screens for the organizer-manager role. An organizer only sees
+     * the screens tied to running their own events and box office.
+     *
+     * @return array<int, self>
+     */
+    public static function defaultOrganizerScreens(): array
+    {
+        return [
+            self::DASHBOARD,
+            self::EVENTS,
+            self::TICKETS,
+            self::PROMOTIONS,
+            self::COUPONS,
+            self::BOOKINGS,
+            self::PAYMENTS,
+            self::REVIEWS,
+            self::WITHDRAWALS,
+        ];
     }
 }

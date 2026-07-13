@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Order\StoreOrderRequest;
 use App\Http\Resources\V1\OrderResource;
 use App\Models\Order;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -67,9 +68,10 @@ final class OrderController extends Controller
             ->withCount(['items', 'tickets'])
             ->latest();
 
-        // If not admin, show only user's orders
+        // Back-office (admin / super-admin) sees every order; anyone else only
+        // their own.
         $user = $request->user();
-        $isAdmin = $user && $user->hasRole('admin');
+        $isAdmin = $user && $user->hasAnyRole(['admin', 'super-admin']);
 
         if (! $isAdmin) {
             $query->where('user_id', $user?->id);
@@ -81,6 +83,17 @@ final class OrderController extends Controller
 
         if ($request->filled('email')) {
             $query->where('email', $request->input('email'));
+        }
+
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
+
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%");
+            });
         }
 
         $orders = $query->paginate(15);

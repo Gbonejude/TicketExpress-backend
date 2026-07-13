@@ -20,5 +20,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('events/{id}/publish', [EventController::class, 'publish'])->whereUlid('id')->name('events.publish');
         Route::post('events/{id}/unpublish', [EventController::class, 'unpublish'])->whereUlid('id')->name('events.unpublish');
         Route::post('events/{id}/cancel', [EventController::class, 'cancel'])->whereUlid('id')->name('events.cancel');
+
+        // Box-office report (sold / scanned / revenue / commission per ticket type)
+        Route::get('events/{id}/stats', [EventController::class, 'stats'])->whereUlid('id')->name('events.stats');
     });
 });

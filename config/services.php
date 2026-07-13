@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'paygate' => [
+        'api_key' => env('PAYGATE_API_KEY'),
+        'base_url' => env('PAYGATE_BASE_URL', 'https://paygateglobal.com'),
+        'currency' => env('PAYGATE_CURRENCY', 'XOF'),
+        'timeout' => (int) env('PAYGATE_TIMEOUT', 30),
+        'webhook_secret' => env('PAYGATE_WEBHOOK_SECRET'),
+        'verify_ssl' => filter_var(env('PAYGATE_VERIFY_SSL', true), FILTER_VALIDATE_BOOL),
+        'auto_redirect' => filter_var(env('PAYGATE_AUTO_REDIRECT', true), FILTER_VALIDATE_BOOL),
+    ],
+
 ];

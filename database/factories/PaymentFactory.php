@@ -22,25 +22,25 @@ final class PaymentFactory extends Factory
         return [
             'order_id' => Order::factory(),
             'amount' => $this->faker->randomFloat(2, 5000, 100000),
-            'method' => $this->faker->randomElement([PaymentMethod::MOBILE_MONEY, PaymentMethod::CASH, PaymentMethod::CARD]),
-            'transaction_reference' => strtoupper($this->faker->bothify('TXN-####-????-####')),
-            'status' => PaymentStatus::COMPLETED,
+            'method' => $this->faker->randomElement([PaymentMethod::FLOOZ, PaymentMethod::TMONEY]),
+            'transaction_reference' => mb_strtoupper($this->faker->bothify('TXN-####-????-####')),
+            'status' => PaymentStatus::PAYE,
             'paid_at' => now(),
         ];
+    }
+
+    public function paid(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => PaymentStatus::PAYE,
+            'paid_at' => now(),
+        ]);
     }
 
     public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => PaymentStatus::PENDING,
-            'paid_at' => null,
-        ]);
-    }
-
-    public function failed(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'status' => PaymentStatus::FAILED,
+            'status' => PaymentStatus::NON_PAYE,
             'paid_at' => null,
         ]);
     }

@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+use Laravel\Pulse\Http\Middleware\Authorize;
+use Laravel\Pulse\Pulse;
 use Laravel\Pulse\Recorders;
 
 return [
@@ -9,9 +13,9 @@ return [
     | Pulse Domain
     |--------------------------------------------------------------------------
     |
-    | This is the subdomain where Pulse will be accessible from. When set
-    | to null, Pulse will reside under the same domain as the application.
-    | Otherwise, this value will be used as the subdomain.
+    | This is the subdomain which the Pulse dashboard will be accessible from.
+    | When set to null, the dashboard will reside under the same domain as
+    | the application. Remember to configure your DNS entries correctly.
     |
     */
 
@@ -22,8 +26,9 @@ return [
     | Pulse Path
     |--------------------------------------------------------------------------
     |
-    | This is the URI path where Pulse will be accessible from. Feel free
-    | to change this path to anything you like.
+    | This is the path which the Pulse dashboard will be accessible from. Feel
+    | free to change this path to anything you'd like. Note that this won't
+    | affect the path of the internal API that is never exposed to users.
     |
     */
 
@@ -34,9 +39,9 @@ return [
     | Pulse Master Switch
     |--------------------------------------------------------------------------
     |
-    | This option may be used to disable all Pulse data recorders regardless
-    | of their individual configurations. This provides a single option to
-    | quickly disable all Pulse functionality.
+    | This configuration option may be used to completely disable all Pulse
+    | data recorders regardless of their individual configurations. This
+    | provides a single option to quickly disable all Pulse recording.
     |
     */
 
@@ -48,15 +53,20 @@ return [
     |--------------------------------------------------------------------------
     |
     | This configuration option determines which storage driver will be used
-    | while storing and retrieving Pulse data.
+    | while storing entries from Pulse's recorders. In addition, you also
+    | may provide any options to configure the selected storage driver.
     |
     */
 
     'storage' => [
         'driver' => env('PULSE_STORAGE_DRIVER', 'database'),
 
+        'trim' => [
+            'keep' => env('PULSE_STORAGE_KEEP', '7 days'),
+        ],
+
         'database' => [
-            'connection' => env('PULSE_DB_CONNECTION', null),
+            'connection' => env('PULSE_DB_CONNECTION'),
             'chunk' => 1000,
         ],
     ],
@@ -66,17 +76,55 @@ return [
     | Pulse Ingest Driver
     |--------------------------------------------------------------------------
     |
-    | This configuration option determines the ingest driver that will be used
-    | to capture entries from your application.
+    | This configuration options determines the ingest driver that will be used
+    | to capture entries from Pulse's recorders. Ingest drivers are great to
+    | free up your request workers quickly by offloading the data storage.
     |
     */
 
     'ingest' => [
         'driver' => env('PULSE_INGEST_DRIVER', 'storage'),
+
+        'buffer' => env('PULSE_INGEST_BUFFER', 5_000),
+
         'trim' => [
             'lottery' => [1, 1_000],
-            'keep' => '7 days',
+            'keep' => env('PULSE_INGEST_KEEP', '7 days'),
         ],
+
+        'redis' => [
+            'connection' => env('PULSE_REDIS_CONNECTION'),
+            'chunk' => 1000,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pulse Cache Driver
+    |--------------------------------------------------------------------------
+    |
+    | This configuration option determines the cache driver that will be used
+    | for various tasks, including caching dashboard results, establishing
+    | locks for events that should only occur on one server and signals.
+    |
+    */
+
+    'cache' => env('PULSE_CACHE_DRIVER'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pulse Route Middleware
+    |--------------------------------------------------------------------------
+    |
+    | These middleware will be assigned to every Pulse route, giving you the
+    | chance to add your own middleware to this list or change any of the
+    | existing middleware. Of course, reasonable defaults are provided.
+    |
+    */
+
+    'middleware' => [
+        'web',
+        Authorize::class,
     ],
 
     /*
@@ -84,9 +132,9 @@ return [
     | Pulse Recorders
     |--------------------------------------------------------------------------
     |
-    | These configuration options determine which recorders will capture data
-    | for your application. You may choose to disable specific recorders to
-    | speed up data ingestion or reduce database usage.
+    | The following array lists the "recorders" that will be registered with
+    | Pulse, along with their configuration. Recorders gather application
+    | event data from requests and tasks to pass to your ingest driver.
     |
     */
 
@@ -94,24 +142,21 @@ return [
         Recorders\CacheInteractions::class => [
             'enabled' => env('PULSE_CACHE_INTERACTIONS_ENABLED', true),
             'sample_rate' => env('PULSE_CACHE_INTERACTIONS_SAMPLE_RATE', 1),
-            'groups' => [
-                // Pattern => Label
-                // '/^job\..*/' => 'Jobs',
-                // '/^laravel:/' => 'Laravel',
-            ],
             'ignore' => [
-                '#^illuminate:#',
-                '#^laravel:pulse:#',
-                '#^spatie\.permission\.cache#',
+                ...Pulse::defaultVendorCacheKeys(),
+            ],
+            'groups' => [
+                '/^job-exceptions:.*/' => 'job-exceptions:*',
+                // '/:\d+/' => ':*',
             ],
         ],
 
         Recorders\Exceptions::class => [
             'enabled' => env('PULSE_EXCEPTIONS_ENABLED', true),
             'sample_rate' => env('PULSE_EXCEPTIONS_SAMPLE_RATE', 1),
-            'capture_at' => env('PULSE_EXCEPTIONS_CAPTURE_AT', true),
+            'location' => env('PULSE_EXCEPTIONS_LOCATION', true),
             'ignore' => [
-                // 'Illuminate\Http\Exceptions\HttpResponseException',
+                // '/^Package\\\\Exceptions\\\\/',
             ],
         ],
 
@@ -119,8 +164,13 @@ return [
             'enabled' => env('PULSE_QUEUES_ENABLED', true),
             'sample_rate' => env('PULSE_QUEUES_SAMPLE_RATE', 1),
             'ignore' => [
-                //
+                // '/^Package\\\\Jobs\\\\/',
             ],
+        ],
+
+        Recorders\Servers::class => [
+            'server_name' => env('PULSE_SERVER_NAME', gethostname()),
+            'directories' => explode(':', env('PULSE_SERVER_DIRECTORIES', '/')),
         ],
 
         Recorders\SlowJobs::class => [
@@ -128,7 +178,7 @@ return [
             'sample_rate' => env('PULSE_SLOW_JOBS_SAMPLE_RATE', 1),
             'threshold' => env('PULSE_SLOW_JOBS_THRESHOLD', 1000),
             'ignore' => [
-                //
+                // '/^Package\\\\Jobs\\\\/',
             ],
         ],
 
@@ -137,7 +187,12 @@ return [
             'sample_rate' => env('PULSE_SLOW_OUTGOING_REQUESTS_SAMPLE_RATE', 1),
             'threshold' => env('PULSE_SLOW_OUTGOING_REQUESTS_THRESHOLD', 1000),
             'ignore' => [
-                //
+                // '#^http://127\.0\.0\.1:13714#', // Inertia SSR...
+            ],
+            'groups' => [
+                // '#^https://api\.github\.com/repos/.*$#' => 'api.github.com/repos/*',
+                // '#^https?://([^/]*).*$#' => '\1',
+                // '#/\d+#' => '/*',
             ],
         ],
 
@@ -146,10 +201,10 @@ return [
             'sample_rate' => env('PULSE_SLOW_QUERIES_SAMPLE_RATE', 1),
             'threshold' => env('PULSE_SLOW_QUERIES_THRESHOLD', 1000),
             'location' => env('PULSE_SLOW_QUERIES_LOCATION', true),
+            'max_query_length' => env('PULSE_SLOW_QUERIES_MAX_QUERY_LENGTH'),
             'ignore' => [
-                '#^insert into `pulse_#',
-                '#^update `pulse_#',
-                '#^select \* from `pulse_#',
+                '/(["`])pulse_[\w]+?\1/', // Pulse tables...
+                '/(["`])telescope_[\w]+?\1/', // Telescope tables...
             ],
         ],
 
@@ -158,23 +213,16 @@ return [
             'sample_rate' => env('PULSE_SLOW_REQUESTS_SAMPLE_RATE', 1),
             'threshold' => env('PULSE_SLOW_REQUESTS_THRESHOLD', 1000),
             'ignore' => [
-                '#^/pulse$#',
+                '#^/' . env('PULSE_PATH', 'pulse') . '$#', // Pulse dashboard...
+                '#^/telescope#', // Telescope dashboard...
             ],
-        ],
-
-        Recorders\Servers::class => [
-            'server_name' => env('PULSE_SERVER_NAME', gethostname()),
-            'directories' => explode(':', env(
-                'PULSE_SERVER_DIRECTORIES',
-                '/',
-            )),
         ],
 
         Recorders\UserJobs::class => [
             'enabled' => env('PULSE_USER_JOBS_ENABLED', true),
             'sample_rate' => env('PULSE_USER_JOBS_SAMPLE_RATE', 1),
             'ignore' => [
-                //
+                // '/^Package\\\\Jobs\\\\/',
             ],
         ],
 
@@ -182,25 +230,9 @@ return [
             'enabled' => env('PULSE_USER_REQUESTS_ENABLED', true),
             'sample_rate' => env('PULSE_USER_REQUESTS_SAMPLE_RATE', 1),
             'ignore' => [
-                '#^/pulse$#',
+                '#^/' . env('PULSE_PATH', 'pulse') . '$#', // Pulse dashboard...
+                '#^/telescope#', // Telescope dashboard...
             ],
         ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Pulse Middleware
-    |--------------------------------------------------------------------------
-    |
-    | These middleware will be assigned to every Pulse route, giving you the
-    | chance to add your own middleware to this stack or override existing
-    | middleware provided by Pulse.
-    |
-    */
-
-    'middleware' => [
-        'web',
-        // Note: 'auth' middleware retiré car pas de route 'login' dans cette API
-        // Pour production, créer un middleware custom qui vérifie auth()->check()
     ],
 ];

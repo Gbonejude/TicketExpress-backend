@@ -25,8 +25,10 @@ final class ScreenPermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. One permission per screen (guard `web`, matching the roles).
-        foreach (Screen::permissions() as $name) {
+        // 1. One permission per screen plus per-screen CRUD actions
+        //    (e.g. `screen.events`, `events.create`, `events.update`, …).
+        $allPermissions = array_merge(Screen::permissions(), Screen::allActionPermissions());
+        foreach ($allPermissions as $name) {
             Permission::firstOrCreate([
                 'name' => $name,
                 'guard_name' => 'web',
@@ -51,14 +53,39 @@ final class ScreenPermissionSeeder extends Seeder
                 'label' => 'Administration',
             ])->save();
 
-            $admin->syncPermissions(
-                array_map(
-                    static fn (Screen $s): string => $s->permission(),
-                    Screen::defaultAdminScreens(),
-                ),
-            );
+            $admin->syncPermissions($this->permissionsFor(Screen::defaultAdminScreens()));
+        }
+
+        // 4. organizer-manager — back-office, only their own event/box-office
+        //    screens (no user/role/organizer administration).
+        $organizer = Role::query()->where('name', 'organizer-manager')->first();
+        if ($organizer !== null) {
+            $organizer->forceFill([
+                'is_back_office' => true,
+                'label' => 'Organisateur',
+            ])->save();
+
+            $organizer->syncPermissions($this->permissionsFor(Screen::defaultOrganizerScreens()));
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /**
+     * Screen-access + all action permissions for the given screens.
+     *
+     * @param  array<int, Screen>  $screens
+     * @return array<int, string>
+     */
+    private function permissionsFor(array $screens): array
+    {
+        $permissions = [];
+
+        foreach ($screens as $screen) {
+            $permissions[] = $screen->permission();
+            $permissions = array_merge($permissions, $screen->actionPermissions());
+        }
+
+        return $permissions;
     }
 }

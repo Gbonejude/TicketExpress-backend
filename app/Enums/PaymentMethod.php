@@ -18,7 +18,7 @@ enum PaymentMethod: string
             self::STRIPE => 'Stripe',
             self::WAVE => 'Wave',
             self::FLOOZ => 'Flooz',
-            self::TMONEY => 'TMoney',
+            self::TMONEY => 'Mix by Yas',
             self::PAYPAL => 'PayPal',
         };
     }

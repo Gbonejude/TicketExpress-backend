@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EventStatus;
+use App\Enums\EventType;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -37,6 +38,10 @@ final class Event extends Model implements HasMedia
         'end_date',
         'max_attendees',
         'status',
+        'event_type',
+        'online_url',
+        'refund_allowed',
+        'refund_days_before',
     ];
 
     protected $with = [
@@ -143,13 +148,27 @@ final class Event extends Model implements HasMedia
         return $this->belongsToMany(related: Coupon::class, table: 'event_coupon');
     }
 
+    /**
+     * Users who favorited this event.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function favoritedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(related: User::class, table: 'event_favorites')
+            ->withTimestamps();
+    }
+
     protected function casts(): array
     {
         return [
             'start_date' => 'datetime',
             'end_date' => 'datetime',
             'status' => EventStatus::class,
+            'event_type' => EventType::class,
             'max_attendees' => 'integer',
+            'refund_allowed' => 'boolean',
+            'refund_days_before' => 'integer',
         ];
     }
 }

@@ -10,8 +10,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Review\StoreReviewRequest;
 use App\Http\Resources\V1\ReviewResource;
 use App\Models\Review;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * @group Reviews
@@ -33,7 +35,7 @@ final class ReviewController extends Controller
      *
      * @apiResourceModel \App\Models\Review
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         $query = Review::query()
             ->with(['user', 'event'])
@@ -43,9 +45,17 @@ final class ReviewController extends Controller
             $query->where('event_id', $request->input('event_id'));
         }
 
-        $reviews = $query->get();
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
 
-        return $this->success(ReviewResource::collection($reviews));
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('comment', 'like', "%{$search}%");
+            });
+        }
+
+        $reviews = $query->paginate(15);
+
+        return ReviewResource::collection($reviews);
     }
 
     /**

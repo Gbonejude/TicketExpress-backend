@@ -19,6 +19,7 @@ final class UpdateTicketTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'occurrence_id' => ['nullable', 'string', 'exists:event_occurrences,id'],
             'name' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['sometimes', 'numeric', 'min:0'],

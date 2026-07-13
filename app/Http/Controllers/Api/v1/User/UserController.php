@@ -12,7 +12,10 @@ use App\Http\Requests\v1\User\StoreRequest;
 use App\Http\Requests\v1\User\UpdateRequest;
 use App\Http\Resources\V1\UserResource;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\UploadedFile;
 
 /**
@@ -33,11 +36,24 @@ final class UserController extends Controller
      *
      * @apiResourceModel \App\Models\User
      */
-    public function index(): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $users = User::query()->latest()->get();
+        $query = User::query()->latest();
 
-        return $this->success(UserResource::collection($users));
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
+
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->paginate(15);
+
+        return UserResource::collection($users);
     }
 
     /**

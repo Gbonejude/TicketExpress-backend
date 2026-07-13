@@ -13,8 +13,10 @@ use App\Http\Requests\V1\Coupon\StoreCouponRequest;
 use App\Http\Requests\V1\Coupon\UpdateCouponRequest;
 use App\Http\Resources\V1\CouponResource;
 use App\Models\Coupon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * @group Coupons
@@ -34,14 +36,23 @@ final class CouponController extends Controller
      *
      * @apiResourceModel \App\Models\Coupon
      */
-    public function index(): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $coupons = Coupon::query()
+        $query = Coupon::query()
             ->withCount('events')
-            ->latest()
-            ->get();
+            ->latest();
 
-        return $this->success(CouponResource::collection($coupons));
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
+
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('code', 'like', "%{$search}%");
+            });
+        }
+
+        $coupons = $query->paginate(15);
+
+        return CouponResource::collection($coupons);
     }
 
     /**

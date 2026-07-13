@@ -12,7 +12,10 @@ use App\Http\Requests\V1\Venue\StoreVenueRequest;
 use App\Http\Requests\V1\Venue\UpdateVenueRequest;
 use App\Http\Resources\V1\VenueResource;
 use App\Models\Venue;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * @group Venues
@@ -32,14 +35,25 @@ final class VenueController extends Controller
      *
      * @apiResourceModel \App\Models\Venue
      */
-    public function index(): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $venues = Venue::query()
+        $query = Venue::query()
             ->withCount('events')
-            ->latest()
-            ->get();
+            ->latest();
 
-        return $this->success(VenueResource::collection($venues));
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
+
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+
+        $venues = $query->paginate(15);
+
+        return VenueResource::collection($venues);
     }
 
     /**

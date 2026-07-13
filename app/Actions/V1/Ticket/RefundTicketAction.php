@@ -51,12 +51,20 @@ final class RefundTicketAction implements Action
         $isEventCancelled = $eventStatus === EventStatus::CANCELLED;
 
         if (! $isEventCancelled && ! $forceRefund) {
-            // Voluntary refund - check conditions
+            // Voluntary refund — governed by the organizer's per-event policy.
 
-            // 1. Check 30-day deadline
+            // 1. Refunds must be enabled for this event.
+            if (! $event->refund_allowed) {
+                throw new \DomainException('Les remboursements ne sont pas autorisés pour cet événement.');
+            }
+
+            // 2. Respect the organizer's deadline (X days before the event).
+            $requiredDaysBefore = (int) $event->refund_days_before;
             $daysBefore = now()->diffInDays($event->start_date, false);
-            if ($daysBefore < 30) {
-                throw new \DomainException('Les remboursements doivent être demandés au moins 30 jours avant l\'événement.');
+            if ($daysBefore < $requiredDaysBefore) {
+                throw new \DomainException(
+                    "Les remboursements doivent être demandés au moins {$requiredDaysBefore} jour(s) avant l'événement.",
+                );
             }
 
             // 2. Check if a coupon was used

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\V1\Event;
 
 use App\Enums\EventStatus;
+use App\Enums\EventType;
 use App\Rules\NoXssRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -40,6 +41,10 @@ final class UpdateEventRequest extends FormRequest
             'end_date' => ['sometimes', 'date', 'after:start_date'],
             'max_attendees' => ['nullable', 'integer', 'min:1'],
             'status' => ['sometimes', 'string', Rule::enum(EventStatus::class)],
+            'event_type' => ['sometimes', 'string', Rule::enum(EventType::class)],
+            'online_url' => ['nullable', 'url', 'max:2048', 'required_if:event_type,online'],
+            'refund_allowed' => ['sometimes', 'boolean'],
+            'refund_days_before' => ['sometimes', 'integer', 'min:0', 'max:365'],
         ];
     }
 

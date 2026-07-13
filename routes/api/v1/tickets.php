@@ -15,3 +15,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->whereUlid('ticket')
         ->name('tickets.check-in');
 });
+
+// Back-office issued-tickets listing (screen.tickets; super-admin via Gate::before).
+Route::middleware(['auth:sanctum', 'role_or_permission:super-admin|screen.tickets'])
+    ->group(function (): void {
+        Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');
+    });

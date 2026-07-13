@@ -19,6 +19,7 @@ final class StoreTicketTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'occurrence_id' => ['nullable', 'string', 'exists:event_occurrences,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],

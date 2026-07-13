@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\V1\Auth;
 
 use App\Actions\Contracts\Action;
+use App\Events\ResourceChangedEvent;
 use App\Models\Organizer;
 use App\Models\User;
 use App\Notifications\OrganizerRegisteredNotification;
@@ -57,6 +58,15 @@ final class RegisterOrganizerManagerAction implements Action
                     new OrganizerRegisteredNotification($organizer, $user)
                 );
             }
+
+            // Real-time signal so the back-office organizers list refreshes
+            // (with a toast) without a manual reload.
+            DB::afterCommit(fn () => ResourceChangedEvent::dispatch(
+                'organizers',
+                'created',
+                $organizer->id,
+                $organizer->company_name,
+            ));
 
             return $user->load('organizer');
         });
