@@ -22,3 +22,15 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Modelling sources (draw.io, PlantUML, PowerAMC, Visual Paradigm).
+# Editable design artefacts kept outside the repository; export the rendered
+# images into docs/ if a diagram needs to be versioned alongside the code.
+*.drawio
+*.dio
+*.puml
+*.plantuml
+*.cdm
+*.xmi
+*.mpd
+*.bpd

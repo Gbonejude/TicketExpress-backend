@@ -11,6 +11,10 @@ Route::prefix('auth')->group(function (): void {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('register/client', [AuthController::class, 'registerClient']);
     Route::post('register/organizer-manager', [AuthController::class, 'registerOrganizerManager']);
+
+    // Public site login. The back-office keeps `admin/login`, which returns
+    // permission rules on top of the token.
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('auth.login');
     Route::post('admin/login', [AuthController::class, 'adminLogin'])->middleware('throttle:10,1');
     Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:3,1');
 

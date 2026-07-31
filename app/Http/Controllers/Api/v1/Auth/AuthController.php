@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 use App\Actions\V1\Auth\AdminLoginAction;
 use App\Actions\V1\Auth\ForgotPasswordAction;
 use App\Actions\V1\Auth\IssueTokenAction;
+use App\Actions\V1\Auth\LoginAction;
 use App\Actions\V1\Auth\LogoutAction;
 use App\Actions\V1\Auth\RegisterClientAction;
 use App\Actions\V1\Auth\RegisterOrganizerManagerAction;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Auth\AdminLoginRequest;
 use App\Http\Requests\V1\Auth\CompleteRegistrationRequest;
 use App\Http\Requests\V1\Auth\ForgotPasswordRequest;
+use App\Http\Requests\V1\Auth\LoginRequest;
 use App\Http\Requests\V1\Auth\RegisterClientRequest;
 use App\Http\Requests\V1\Auth\RegisterOrganizerManagerRequest;
 use App\Http\Requests\V1\Auth\SendOtpRequest;
@@ -160,6 +162,56 @@ final class AuthController extends Controller
     }
 
     /**
+     * Login
+     *
+     * Authenticates a user with an email address and a password, and returns an
+     * access token. This is the login route for the public site; the back-office
+     * uses `auth/admin/login`, which additionally returns permission rules.
+     *
+     * @unauthenticated
+     *
+     * @header X-Device-Name web
+     *
+     * @response 200 scenario="Login successful" {
+     *   "success": true,
+     *   "message": "Connexion réussie.",
+     *   "data": {
+     *     "token": "5|abc123...",
+     *     "user": {
+     *       "id": "01J...",
+     *       "firstName": "Jean",
+     *       "lastName": "Dupont",
+     *       "fullName": "Jean Dupont",
+     *       "email": "jean.dupont@example.com",
+     *       "phone": "+22890200001"
+     *     }
+     *   }
+     * }
+     * @response 401 scenario="Invalid credentials" {
+     *   "message": "Invalid credentials."
+     * }
+     */
+    public function login(
+        LoginRequest $request,
+        LoginAction $login,
+        IssueTokenAction $issueToken,
+    ): JsonResponse {
+        /** @var array{email: string, password: string} $credentials */
+        $credentials = $request->validated();
+        $user = $login->execute($credentials);
+
+        $token = $issueToken->execute([
+            'user' => $user,
+            'device_name' => $request->header('X-Device-Name', 'web'),
+        ]);
+
+        return $this->success([
+            'token' => $token,
+            'user' => new UserResource($user),
+        ], 'Connexion réussie.');
+    }
+
+    /**
      * Admin Login
      *
      * Authenticates an administrator using email and password.
@@ -206,10 +258,13 @@ final class AuthController extends Controller
      *
      * @unauthenticated
      *
+     * @header X-Device-Name web
+     *
      * @response 201 scenario="Client account created" {
      *   "success": true,
      *   "message": "Compte client créé avec succès.",
      *   "data": {
+     *     "token": "6|abc123...",
      *     "user": {
      *       "id": "01J...",
      *       "firstName": "Jean",
@@ -230,12 +285,22 @@ final class AuthController extends Controller
     public function registerClient(
         RegisterClientRequest $request,
         RegisterClientAction $action,
+        IssueTokenAction $issueToken,
     ): JsonResponse {
         /** @var array{first_name: string, last_name: string, email: string, phone: string, password: string} $data */
         $data = $request->validated();
         $user = $action->execute($data);
 
+        // Signing up already proves the credentials, so a token is issued here.
+        // Without it the client would have to submit a login form immediately
+        // after registering, with the details it just typed.
+        $token = $issueToken->execute([
+            'user' => $user,
+            'device_name' => $request->header('X-Device-Name', 'web'),
+        ]);
+
         return $this->created([
+            'token' => $token,
             'user' => new UserResource($user),
         ], 'Compte client créé avec succès.');
     }

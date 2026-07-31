@@ -17,10 +17,42 @@ it('creates a client account with password and returns user data', function () u
     $this->postJson('/api/v1/auth/register/client', $payload())
         ->assertCreated()
         ->assertJson(['success' => true, 'message' => 'Compte client créé avec succès.'])
-        ->assertJsonStructure(['data' => ['user' => ['id', 'firstName', 'lastName', 'fullName', 'email', 'phone']]]);
+        ->assertJsonStructure(['data' => ['token', 'user' => ['id', 'firstName', 'lastName', 'fullName', 'email', 'phone']]]);
 
     expect(User::where('email', 'jean.dupont@example.com')->exists())->toBeTrue();
     expect(User::where('phone', '+22890200001')->exists())->toBeTrue();
+});
+
+it('returns an access token so the new client is signed in immediately', function () use ($payload) {
+    $token = $this->postJson('/api/v1/auth/register/client', $payload())
+        ->assertCreated()
+        ->json('data.token');
+
+    expect($token)->toBeString()->not->toBeEmpty();
+
+    // The token must work straight away — no second login round-trip.
+    $this->withToken($token)
+        ->getJson('/api/v1/me')
+        ->assertSuccessful();
+});
+
+it('names the registration token after the X-Device-Name header', function () use ($payload) {
+    $this->withHeader('X-Device-Name', 'android-chrome')
+        ->postJson('/api/v1/auth/register/client', $payload())
+        ->assertCreated();
+
+    $user = User::where('email', 'jean.dupont@example.com')->first();
+
+    expect($user->tokens()->first()->name)->toBe('android-chrome');
+});
+
+it('does not issue a token when registration fails validation', function () use ($payload) {
+    $data = $payload();
+    $data['email'] = 'invalid-email';
+
+    $this->postJson('/api/v1/auth/register/client', $data)
+        ->assertUnprocessable()
+        ->assertJsonMissingPath('data.token');
 });
 
 it('assigns the client role to the newly registered user', function () use ($payload) {
