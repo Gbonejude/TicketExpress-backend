@@ -110,6 +110,19 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Adresse du formulaire de contact
+    |--------------------------------------------------------------------------
+    |
+    | Boîte qui reçoit les messages du formulaire public. Par défaut l'adresse
+    | d'expédition de l'application, pour qu'un déploiement sans réglage
+    | supplémentaire fonctionne quand même.
+    |
+    */
+
+    'contact_address' => env('MAIL_CONTACT_ADDRESS', env('MAIL_FROM_ADDRESS')),
+
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),
