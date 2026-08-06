@@ -154,11 +154,29 @@ final class Organizer extends Model implements HasMedia
     }
 
     /**
-     * Amount currently available for withdrawal.
+     * Montant demandé et encore en attente de décision.
+     */
+    public function pendingWithdrawn(): float
+    {
+        return (float) $this->withdrawals()
+            ->where('status', WithdrawalStatus::PENDING->value)
+            ->sum('amount');
+    }
+
+    /**
+     * Ce qui reste réellement demandable.
+     *
+     * Les demandes en attente sont déduites, elles aussi : elles n'ont pas
+     * encore été payées, mais elles sont engagées. Sans cette déduction, un
+     * organisateur pouvait déposer autant de demandes qu'il voulait pour le même
+     * solde, et la somme des retraits dépassait ses recettes.
      */
     public function availableBalance(): float
     {
-        return round($this->netRevenue() - $this->totalWithdrawn(), 2);
+        return round(
+            $this->netRevenue() - $this->totalWithdrawn() - $this->pendingWithdrawn(),
+            2,
+        );
     }
 
     protected function casts(): array

@@ -59,9 +59,14 @@ final class RefundTicketActionTest extends TestCase
 
     public function test_prevents_refund_when_less_than_30_days(): void
     {
+        // The 30-day window is no longer hardcoded in the action: it comes from
+        // the event's own `refund_days_before`, which the column defaults to 0.
+        // Without setting it, the deadline this test is about does not exist.
         $event = Event::factory()->create([
             'start_date' => now()->addDays(29),
             'status' => EventStatus::PUBLISHED,
+            'refund_allowed' => true,
+            'refund_days_before' => 30,
         ]);
 
         $ticketType = TicketType::factory()->for($event)->create([
@@ -78,7 +83,7 @@ final class RefundTicketActionTest extends TestCase
         ]);
 
         $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage('Les remboursements doivent être demandés au moins 30 jours avant l\'événement.');
+        $this->expectExceptionMessage('Les remboursements doivent être demandés au moins 30 jour(s) avant l\'événement.');
 
         $this->action->execute([
             'ticket' => $ticket,

@@ -53,6 +53,6 @@ final class RoleResource extends JsonResource
      */
     public static function systemRoles(): array
     {
-        return ['super-admin', 'admin', 'organizer-manager', 'client'];
+        return ['super-admin', 'admin', 'organizer-manager', 'participant'];
     }
 }

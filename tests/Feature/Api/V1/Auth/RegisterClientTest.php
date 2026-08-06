@@ -60,7 +60,7 @@ it('assigns the client role to the newly registered user', function () use ($pay
     $response->assertCreated();
 
     $user = User::where('email', 'jean.dupont@example.com')->first();
-    expect($user->hasRole('client'))->toBeTrue();
+    expect($user->hasRole('participant'))->toBeTrue();
 });
 
 it('hashes the password correctly', function () use ($payload) {

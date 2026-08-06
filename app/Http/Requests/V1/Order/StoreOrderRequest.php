@@ -36,6 +36,7 @@ final class StoreOrderRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.ticket_type_id' => ['required', 'string', Rule::exists('ticket_types', 'id')],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+
         ];
     }
 

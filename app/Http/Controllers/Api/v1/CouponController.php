@@ -38,7 +38,10 @@ final class CouponController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        // Les événements associés accompagnent la liste : la colonne
+        // « Événement » les nomme, et le compte seul ne suffisait pas.
         $query = Coupon::query()
+            ->with('events')
             ->withCount('events')
             ->latest();
 

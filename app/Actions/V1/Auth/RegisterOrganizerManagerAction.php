@@ -8,10 +8,13 @@ use App\Actions\Contracts\Action;
 use App\Events\ResourceChangedEvent;
 use App\Models\Organizer;
 use App\Models\User;
+use App\Notifications\OrganizerApplicationReceivedNotification;
 use App\Notifications\OrganizerRegisteredNotification;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Spatie\Permission\Models\Role;
 
 final class RegisterOrganizerManagerAction implements Action
 {
@@ -25,6 +28,7 @@ final class RegisterOrganizerManagerAction implements Action
      *     company_name: string,
      *     description?: string|null,
      *     website?: string|null,
+     *     logo?: UploadedFile|null,
      * }  $data
      */
     public function execute(array $data): User
@@ -50,14 +54,34 @@ final class RegisterOrganizerManagerAction implements Action
                 'status' => 'pending', // En attente de validation admin
             ]);
 
-            // Notifier les admins via database
-            $admins = User::role('admin')->get();
+            // Logo fourni avec la demande : c'est ce que l'administrateur voit
+            // en examinant le dossier, et ce qui habille la page publique de
+            // l'organisateur une fois approuvé.
+            if (($data['logo'] ?? null) instanceof UploadedFile) {
+                $organizer->addMedia($data['logo'])->toMediaCollection('organizers');
+            }
+
+            // Prévenir les administrateurs (cloche + e-mail). `admin` et
+            // `super-admin` : une plateforme qui n'a qu'un super-admin ne doit
+            // pas laisser la demande sans destinataire.
+            //
+            // Les rôles sont d'abord résolus depuis la base : `User::role()`
+            // lève `RoleDoesNotExist` pour un rôle absent, et une inscription
+            // ne doit pas répondre 500 parce qu'un rôle n'a pas été semé.
+            $roles = Role::whereIn('name', ['admin', 'super-admin'])->pluck('name')->all();
+
+            $admins = $roles === [] ? collect() : User::role($roles)->get();
+
             if ($admins->isNotEmpty()) {
                 Notification::send(
                     $admins,
                     new OrganizerRegisteredNotification($organizer, $user)
                 );
             }
+
+            // Accuser réception au demandeur : sans cela l'inscription se
+            // termine en silence sur un compte qui ne peut encore rien faire.
+            $user->notify(new OrganizerApplicationReceivedNotification($organizer));
 
             // Real-time signal so the back-office organizers list refreshes
             // (with a toast) without a manual reload.

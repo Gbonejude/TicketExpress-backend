@@ -55,11 +55,6 @@ final class StoreRequest extends FormRequest
                 'type' => 'string',
                 'example' => 'johnny@example.com',
             ],
-            'password' => [
-                'description' => 'The password for the user account.',
-                'type' => 'string',
-                'example' => 'password',
-            ],
             'phone' => [
                 'description' => 'The phone number of the user.',
                 'type' => 'string',
@@ -86,8 +81,14 @@ final class StoreRequest extends FormRequest
             'birthday' => 'nullable|date|before:today',
             'gender' => 'required|string',
             'role' => ['required', 'string', 'max:255'],
-            'email' => 'nullable|string|email|max:255|unique:users,email',
-            'password' => 'nullable|string|min:8',
+            // Requis, et non plus facultatif : le mot de passe est désormais
+            // généré puis envoyé par mail (CreateUserAction), donc un compte
+            // sans adresse serait un compte auquel personne ne peut se
+            // connecter.
+            'email' => 'required|string|email|max:255|unique:users,email',
+            // `password` n'est volontairement pas accepté ici : il est généré
+            // côté serveur. Absent des règles, il est absent de validated() —
+            // un mot de passe posté est donc ignoré, pas appliqué.
             'phone' => 'required|string|regex:/^([0-9\s\-\+\(\)]*)$/|min:8|max:12|unique:users,phone',
             'image' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,gif,svg|max:2048',
 

@@ -31,8 +31,13 @@ final class TicketDownloadController extends Controller
     {
         $now = now();
 
+        // La commande arrive avec de quoi présenter la ligne : le participant et
+        // sa photo, l'événement concerné, le nombre de billets. Le comptage est
+        // fait par SQL sur la relation, pas ligne par ligne.
         $query = TicketDownloadLink::query()
-            ->with('order')
+            ->with(['order' => fn ($q) => $q
+                ->withCount('tickets')
+                ->with(['user', 'items.ticketType.event'])])
             ->latest();
 
         match ($request->input('state')) {
@@ -45,9 +50,22 @@ final class TicketDownloadController extends Controller
         if ($request->filled('search')) {
             $search = (string) $request->input('search');
 
-            $query->whereHas('order', function (Builder $q) use ($search): void {
-                $q->where('order_number', 'like', "%{$search}%");
-            });
+            // Mot par mot, sur le n° de commande, le participant et l'événement :
+            // « Komi CREPPY » doit trouver, alors que son prénom et son nom sont
+            // dans deux colonnes.
+            $words = preg_split('/\s+/', trim($search), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+            foreach ($words as $word) {
+                $query->whereHas('order', function (Builder $q) use ($word): void {
+                    $q->where('order_number', 'like', "%{$word}%")
+                        ->orWhere('first_name', 'like', "%{$word}%")
+                        ->orWhere('last_name', 'like', "%{$word}%")
+                        ->orWhere('phone', 'like', "%{$word}%")
+                        ->orWhereHas('items.ticketType.event', function (Builder $e) use ($word): void {
+                            $e->where('title', 'like', "%{$word}%");
+                        });
+                });
+            }
         }
 
         return TicketDownloadResource::collection($query->paginate(15));

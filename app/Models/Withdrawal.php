@@ -24,9 +24,14 @@ final class Withdrawal extends Model
      */
     protected $fillable = [
         'organizer_id',
+        'requester_phone',
         'amount',
         'status',
         'payment_method',
+        'processed_at',
+        'processed_by',
+        'notes',
+        'payout_reference',
     ];
 
     /**
@@ -37,11 +42,22 @@ final class Withdrawal extends Model
         return $this->belongsTo(related: Organizer::class);
     }
 
+    /**
+     * L'agent qui a approuvé, rejeté ou payé la demande.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function processedBy(): BelongsTo
+    {
+        return $this->belongsTo(related: User::class, foreignKey: 'processed_by');
+    }
+
     protected function casts(): array
     {
         return [
             'amount' => 'decimal:2',
             'status' => WithdrawalStatus::class,
+            'processed_at' => 'datetime',
         ];
     }
 }

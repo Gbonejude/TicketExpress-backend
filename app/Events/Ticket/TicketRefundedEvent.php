@@ -49,12 +49,22 @@ final class TicketRefundedEvent implements ShouldBroadcast
     /**
      * Get the data to broadcast.
      *
+     * Même bornage que `TicketCheckedInEvent`, et pour la même raison : la
+     * ressource complète avec `order` et `ticketType` chargés dépasse les 10 240
+     * octets acceptés par message chez Pusher, et le message part en
+     * `failed_jobs`. Le client rafraîchit sur réception, il n'a pas besoin de la
+     * charge — seulement de savoir de quel billet il s'agit.
+     *
      * @return array<string, mixed>
      */
     public function broadcastWith(): array
     {
         return [
-            'ticket' => new TicketResource($this->ticket->load(['order', 'ticketType'])),
+            'ticketId' => $this->ticket->id,
+            'ticketNumber' => $this->ticket->ticket_number,
+            'eventId' => $this->ticket->ticketType?->event_id,
+            'status' => $this->ticket->status->value,
+            'refundedAt' => $this->ticket->refunded_at?->toIso8601String(),
             'message' => 'Le ticket a été remboursé avec succès',
         ];
     }

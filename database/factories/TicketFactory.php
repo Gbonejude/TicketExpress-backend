@@ -28,7 +28,9 @@ final class TicketFactory extends Factory
             'attendee_name' => $this->faker->name(),
             'attendee_email' => $this->faker->safeEmail(),
             'qr_code' => $this->faker->uuid(),
-            'ticket_number' => 'TKT-'.strtoupper($this->faker->bothify('????-####')),
+            // Même forme que la production (voir AppSupportTicketNumber) : préfixe
+            // d'événement, année, séquence.
+            'ticket_number' => strtoupper($this->faker->bothify('????')).'-'.now()->year.'-'.$this->faker->unique()->numerify('####'),
             'status' => TicketStatus::VALID,
             'checked_in_at' => null,
             'checked_in_by' => null,

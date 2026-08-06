@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\V1\Auth;
 
 use App\Actions\Contracts\Action;
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -31,7 +32,7 @@ final class RegisterClientAction implements Action
                 'password' => Hash::make($data['password']),
             ]);
 
-            $user->assignRole('client');
+            $user->assignRole(UserRole::PARTICIPANT->value);
 
             return $user;
         });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Helpers;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification;
 
@@ -61,13 +62,13 @@ final class NotificationHelper
     }
 
     /**
-     * Notify client (user with client role).
+     * Notify a participant (a user holding the participant role).
      *
      * @param  \Illuminate\Notifications\Notification  $notification
      */
     public static function notifyClient(User $client, $notification): void
     {
-        if ($client->hasRole('client')) {
+        if ($client->hasRole(UserRole::PARTICIPANT->value)) {
             $client->notify($notification);
         }
     }

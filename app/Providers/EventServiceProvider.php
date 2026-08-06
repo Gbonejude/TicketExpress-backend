@@ -11,8 +11,9 @@ use App\Events\Order\OrderRefundedEvent;
 use App\Events\Organizer\OrganizerApprovedEvent;
 use App\Events\Organizer\OrganizerRejectedEvent;
 use App\Events\Organizer\OrganizerStatusUpdatedEvent;
-use App\Events\Review\ReviewCreatedEvent;
+use App\Events\ResourceChangedEvent;
 use App\Events\Ticket\TicketCheckedInEvent;
+use App\Listeners\FlushCatalogueCacheListener;
 use App\Listeners\Order\OrderCancelledListener;
 use App\Listeners\Order\OrderCreatedListener;
 use App\Listeners\Order\OrderPaidListener;
@@ -20,7 +21,6 @@ use App\Listeners\Order\OrderRefundedListener;
 use App\Listeners\Organizer\OrganizerApprovedListener;
 use App\Listeners\Organizer\OrganizerRejectedListener;
 use App\Listeners\Organizer\OrganizerStatusUpdatedListener;
-use App\Listeners\Review\ReviewCreatedListener;
 use App\Listeners\Ticket\TicketCheckedInListener;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -58,11 +58,10 @@ final class EventServiceProvider extends ServiceProvider
         //     OrganizerRejectedListener::class,
         // ],
 
-        // Review Events
-        // TODO: Create this listener when needed
-        // ReviewCreatedEvent::class => [
-        //     ReviewCreatedListener::class,
-        // ],
+        // Any write the public catalogue could show invalidates its cache.
+        ResourceChangedEvent::class => [
+            FlushCatalogueCacheListener::class,
+        ],
 
         // Ticket Events
         TicketCheckedInEvent::class => [

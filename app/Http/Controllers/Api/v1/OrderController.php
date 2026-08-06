@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Order\StoreOrderRequest;
 use App\Http\Resources\V1\OrderResource;
 use App\Models\Order;
+use App\Support\PersonSearch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ final class OrderController extends Controller
      *
      * @queryParam status Filter by status (pending, paid, cancelled, refunded). Example: paid
      * @queryParam email Filter by buyer email. Example: john@example.com
+     * @queryParam event_id Keep only the orders containing a ticket of this event. Example: 01HXE2K3M4N5P6Q7R8S9T0V1W1
      *
      * @response 200 {
      *   "success": true,
@@ -64,7 +66,17 @@ final class OrderController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Order::query()
-            ->with(['items.ticketType', 'tickets', 'downloadLink'])
+            // The event is reached through the ticket type. Loading it here is
+            // what lets "my orders" and "my tickets" name the event they belong
+            // to without one extra request per row.
+            ->with([
+                'items.ticketType.event.venue',
+                'tickets.ticketType.event.venue',
+                'downloadLink',
+                // Pour le portrait du participant dans la liste du back-office.
+                // Null sur un achat invité, que la vue sait afficher.
+                'user',
+            ])
             ->withCount(['items', 'tickets'])
             ->latest();
 
@@ -85,15 +97,27 @@ final class OrderController extends Controller
             $query->where('email', $request->input('email'));
         }
 
+        // Filtre par événement. `whereHas` plutôt qu'une jointure : une commande
+        // qui contient deux types de billets du même événement apparaîtrait deux
+        // fois avec une jointure, et le total de la pagination serait faux.
+        if ($request->filled('event_id')) {
+            $eventId = (string) $request->input('event_id');
+
+            $query->whereHas('items.ticketType', function (Builder $q) use ($eventId): void {
+                $q->where('event_id', $eventId);
+            });
+        }
+
         if ($request->filled('search')) {
             $search = (string) $request->input('search');
 
-            $query->where(function (Builder $q) use ($search): void {
-                $q->where('order_number', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%");
-            });
+            // Mot par mot : « Komi CREPPY » cherche le prénom et le nom, qui
+            // vivent dans deux colonnes.
+            PersonSearch::apply(
+                $query,
+                $search,
+                ['order_number', 'email', 'first_name', 'last_name'],
+            );
         }
 
         $orders = $query->paginate(15);
@@ -175,8 +199,17 @@ final class OrderController extends Controller
      */
     public function show(Order $order): JsonResponse
     {
-        // Load relations and counts
-        $order->load(['items.ticketType', 'tickets', 'payments', 'downloadLink']);
+        // Load relations and counts. L'organisateur accompagne l'événement :
+        // la fiche de commande le nomme, et le chercher ligne par ligne aurait
+        // coûté une requête par type de billet.
+        $order->load([
+            'items.ticketType.event.venue',
+            'items.ticketType.event.organizer',
+            'tickets.ticketType.event.venue',
+            'payments',
+            'downloadLink',
+            'user',
+        ]);
         $order->loadCount('items');
         $order->loadCount('tickets');
 

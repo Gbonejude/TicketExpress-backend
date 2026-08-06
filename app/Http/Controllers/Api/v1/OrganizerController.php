@@ -8,6 +8,7 @@ use App\Actions\V1\Organizer\CreateOrganizerAction;
 use App\Actions\V1\Organizer\DeleteOrganizerAction;
 use App\Actions\V1\Organizer\UpdateOrganizerAction;
 use App\Enums\OrganizerStatus;
+use App\Events\Organizer\OrganizerStatusUpdatedEvent;
 use App\Events\ResourceChangedEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Organizer\StoreOrganizerRequest;
@@ -54,7 +55,12 @@ final class OrganizerController extends Controller
             });
         }
 
-        $organizers = $query->paginate(15);
+        // `per_page` est accepté (borné à 100) pour les listes déroulantes du
+        // back-office : le formulaire de retrait ne pouvait choisir que parmi
+        // les 15 premiers organisateurs, les suivants étaient inatteignables.
+        $perPage = min((int) $request->input('per_page', 15), 100);
+
+        $organizers = $query->paginate(max($perPage, 1));
 
         return OrganizerResource::collection($organizers);
     }
@@ -171,7 +177,15 @@ final class OrganizerController extends Controller
         $id->update([
             'status' => OrganizerStatus::APPROVED,
             'rejection_reason' => null,
+            // Approving is what opens the back-office; leaving `is_active`
+            // false would send them an e-mail inviting them into a dead end.
+            'is_active' => true,
         ]);
+
+        // This is what sends the approval e-mail — the one carrying the
+        // dashboard URL. `OrganizerStatusUpdatedListener` has always known how
+        // to send it; nothing was dispatching the event, so it never fired.
+        OrganizerStatusUpdatedEvent::dispatch($id->fresh()->load('user'));
 
         ResourceChangedEvent::dispatch('organizers', 'updated', $id->id, $id->company_name);
 
@@ -198,6 +212,9 @@ final class OrganizerController extends Controller
             'status' => OrganizerStatus::REJECTED,
             'rejection_reason' => $validated['reason'] ?? null,
         ]);
+
+        // Sends the rejection e-mail, with the reason the administrator gave.
+        OrganizerStatusUpdatedEvent::dispatch($id->fresh()->load('user'));
 
         ResourceChangedEvent::dispatch('organizers', 'updated', $id->id, $id->company_name);
 

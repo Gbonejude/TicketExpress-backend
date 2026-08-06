@@ -10,12 +10,17 @@ use App\Events\Ticket\TicketIssuedEvent;
 use App\Jobs\SendEmailJob;
 use App\Mail\TicketPurchaseConfirmationMail;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Ticket;
 use App\Models\TicketDownloadLink;
 use App\Services\TicketDownloadService;
+use App\Support\TicketNumber;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use ReflectionClass;
 
 /**
@@ -54,19 +59,26 @@ final class OrderPaidListener implements ShouldQueue
                 'paid_at' => now(),
             ]);
 
-            $order->load(['items.ticketType', 'tickets']);
+            $order->load(['items.ticketType.event', 'tickets']);
 
-            // Generate tickets for each order item
+            // Generate tickets for each order item.
+            //
+            // Le billet est au porteur : il est émis au nom de l'acheteur, et
+            // c'est le QR — unique par billet — qui fait autorité à l'entrée.
+            // Acheter quatre places puis les transmettre à ses proches est donc
+            // le cas normal, et ne demande aucune saisie.
             foreach ($order->items as $item) {
+                // Le numéro porte l'événement et une séquence (AFRO-2026-0042).
+                // Le préfixe et le point de départ sont calculés une fois par
+                // ligne, puis incrémentés : une commande de dix places ne fait pas
+                // dix comptages.
+                $prefix = TicketNumber::prefix($item->ticketType?->event);
+                $year = now()->year;
+                $sequence = TicketNumber::nextSequence($prefix, $year);
+
                 for ($i = 0; $i < $item->quantity; $i++) {
-                    $ticket = $order->tickets()->create([
-                        'ticket_type_id' => $item->ticket_type_id,
-                        'attendee_name' => $order->first_name.' '.$order->last_name,
-                        'attendee_email' => $order->email,
-                        'ticket_number' => $this->generateTicketNumber(),
-                        'qr_code' => $this->generateQrCode(),
-                        'status' => TicketStatus::VALID,
-                    ]);
+                    $ticket = $this->createTicket($order, $item, $prefix, $year, $sequence);
+                    $sequence = (int) $this->sequenceOf($ticket->ticket_number, $prefix, $year) + 1;
 
                     // Dispatch TicketIssuedEvent
                     event(new TicketIssuedEvent($ticket));
@@ -112,17 +124,54 @@ final class OrderPaidListener implements ShouldQueue
     /**
      * Generate a unique ticket number.
      */
-    private function generateTicketNumber(): string
+    /**
+     * Crée un billet, en réessayant si le numéro vient d'être pris.
+     *
+     * Deux paiements simultanés peuvent viser la même séquence : l'index unique
+     * en rejette un, et on repart du premier numéro réellement libre. Sans cette
+     * reprise, le second paiement échouerait alors que l'argent est encaissé.
+     */
+    private function createTicket(Order $order, OrderItem $item, string $prefix, int $year, int $sequence): Ticket
     {
-        return 'TKT-'.strtoupper(uniqid());
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            try {
+                return $order->tickets()->create([
+                    'ticket_type_id' => $item->ticket_type_id,
+                    'attendee_name' => $order->first_name.' '.$order->last_name,
+                    'attendee_email' => $order->email,
+                    'ticket_number' => TicketNumber::format($prefix, $year, $sequence),
+                    'qr_code' => $this->generateQrCode(),
+                    'status' => TicketStatus::VALID,
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                $sequence = TicketNumber::nextSequence($prefix, $year);
+            }
+        }
+
+        throw new \RuntimeException("Impossible d'attribuer un numéro de billet pour {$prefix}-{$year}.");
+    }
+
+    /** La séquence lue sur un numéro déjà attribué. */
+    private function sequenceOf(string $ticketNumber, string $prefix, int $year): string
+    {
+        return str_replace("{$prefix}-{$year}-", '', $ticketNumber);
     }
 
     /**
-     * Generate a unique QR code.
+     * La charge du QR code : c'est **le** secret du billet.
+     *
+     * Aléatoire cryptographique, et non plus `uniqid()`. `uniqid()` dérive de
+     * l'horloge : deux billets émis dans la même seconde ne différaient que d'un
+     * caractère, donc celui qui détient un billet pouvait deviner ceux de ses
+     * voisins. Depuis que le numéro imprimé est séquentiel — et donc devinable —
+     * c'est cette valeur seule qui autorise l'entrée : elle doit être imprévisible.
+     *
+     * 40 caractères alphanumériques ≈ 238 bits d'entropie, largement au-delà de
+     * ce qu'un QR code lit sans peine.
      */
     private function generateQrCode(): string
     {
-        return 'QR-'.strtoupper(uniqid());
+        return Str::random(40);
     }
 
     /**

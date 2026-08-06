@@ -3,10 +3,19 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\EventController;
+use App\Http\Controllers\Api\V1\OngoingEventController;
 use Illuminate\Support\Facades\Route;
 
 // Public event listing and details
 Route::get('events', [EventController::class, 'index'])->name('events.index');
+
+// Écran d'exploitation « Événements en cours ». Déclaré AVANT `events/{id}`,
+// sinon « ongoing » serait pris pour un ULID d'événement — la contrainte
+// whereUlid l'écarterait, mais l'ordre reste ce qui rend l'intention lisible.
+Route::middleware(['auth:sanctum', 'role_or_permission:super-admin|screen.events'])
+    ->get('events/ongoing', [OngoingEventController::class, 'index'])
+    ->name('events.ongoing');
+
 Route::get('events/{id}', [EventController::class, 'show'])->whereUlid('id')->name('events.show');
 
 Route::middleware('auth:sanctum')->group(function (): void {

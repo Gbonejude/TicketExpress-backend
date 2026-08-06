@@ -21,6 +21,14 @@
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
+        <!--
+            Both names are set on purpose. config/broadcasting.php still reads
+            the pre-Laravel-11 `BROADCAST_DRIVER`, so overriding only
+            `BROADCAST_CONNECTION` left the .env value (pusher) in force: every
+            test dispatching a ShouldBroadcastNow event made a real HTTPS call
+            to Pusher, and failed at random on SSL timeouts.
+        -->
+        <env name="BROADCAST_DRIVER" value="null"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>

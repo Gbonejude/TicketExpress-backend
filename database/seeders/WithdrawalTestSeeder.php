@@ -37,17 +37,17 @@ final class WithdrawalTestSeeder extends Seeder
             [
                 'status' => WithdrawalStatus::PENDING,
                 'amount' => 50000,
-                'payment_method' => 'mobile_money',
+                'payment_method' => 'flooz',
             ],
             [
                 'status' => WithdrawalStatus::APPROVED,
                 'amount' => 75000,
-                'payment_method' => 'bank_transfer',
+                'payment_method' => 'tmoney',
             ],
             [
                 'status' => WithdrawalStatus::PAID,
                 'amount' => 100000,
-                'payment_method' => 'mobile_money',
+                'payment_method' => 'flooz',
             ],
         ];
 

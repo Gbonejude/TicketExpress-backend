@@ -19,6 +19,6 @@ final class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
         $this->call(TestUsersSeeder::class);
         $this->call(ScreenPermissionSeeder::class);
-        $this->call(DemoDataSeeder::class);
+        $this->call(PlatformDemoSeeder::class);
     }
 }

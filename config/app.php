@@ -56,6 +56,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Page de réinitialisation du mot de passe
+    |--------------------------------------------------------------------------
+    |
+    | Le lien envoyé par mail doit ouvrir une page capable de consommer le jeton,
+    | pas l'API. Il pointait sur APP_URL — donc sur Laravel, qui n'a aucune route
+    | web : le lien était mort. Cette valeur permet de désigner le front qui
+    | porte la page (back-office par défaut).
+    |
+    */
+
+    'password_reset_url' => env('PASSWORD_RESET_URL', 'http://localhost:5174/template/reset-password'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
@@ -122,5 +136,24 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Front-end URLs
+    |--------------------------------------------------------------------------
+    |
+    | Two separate applications consume this API, and e-mails have to link to
+    | the right one. `frontend_url` is the public site where participants buy
+    | tickets; `dashboard_url` is the back-office where organizers manage their
+    | events — organizers never sign in on the public site.
+    |
+    | These were being read as `config('app.frontend_url')` without ever having
+    | been declared, so every link built from them was `/login` on nothing.
+    |
+    */
+
+    'frontend_url' => rtrim((string) env('FRONTEND_URL', 'http://localhost:5173'), '/'),
+
+    'dashboard_url' => rtrim((string) env('DASHBOARD_URL', 'http://localhost:5174'), '/'),
 
 ];
