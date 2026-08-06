@@ -12,6 +12,7 @@ use App\Actions\V1\Auth\LogoutAction;
 use App\Actions\V1\Auth\RegisterClientAction;
 use App\Actions\V1\Auth\RegisterOrganizerManagerAction;
 use App\Actions\V1\Auth\RegisterUserAction;
+use App\Actions\V1\Auth\ResetPasswordAction;
 use App\Actions\V1\Auth\SendOtpAction;
 use App\Actions\V1\Auth\VerifyOtpAction;
 use App\Http\Controllers\Controller;
@@ -21,6 +22,7 @@ use App\Http\Requests\V1\Auth\ForgotPasswordRequest;
 use App\Http\Requests\V1\Auth\LoginRequest;
 use App\Http\Requests\V1\Auth\RegisterClientRequest;
 use App\Http\Requests\V1\Auth\RegisterOrganizerManagerRequest;
+use App\Http\Requests\V1\Auth\ResetPasswordRequest;
 use App\Http\Requests\V1\Auth\SendOtpRequest;
 use App\Http\Requests\V1\Auth\VerifyOtpRequest;
 use App\Http\Resources\V1\UserResource;
@@ -381,6 +383,37 @@ final class AuthController extends Controller
      *   "message": "Password reset link sent successfully."
      * }
      */
+    /**
+     * Reset Password
+     *
+     * Consumes the token sent by `forgot-password` and sets the new password.
+     * The action and the request already existed; only this entry point and its
+     * route were missing, so the link in the e-mail led nowhere.
+     *
+     * Every existing access token of the account is revoked: a reset is how
+     * someone recovers a compromised account.
+     *
+     * @unauthenticated
+     *
+     * @response 200 scenario="Password reset" {
+     *   "success": true,
+     *   "message": "Votre mot de passe a été réinitialisé."
+     * }
+     * @response 422 scenario="Invalid or expired token" {
+     *   "success": false,
+     *   "message": "Invalid or expired reset token."
+     * }
+     */
+    public function resetPassword(ResetPasswordRequest $request, ResetPasswordAction $action): JsonResponse
+    {
+        /** @var array{email: string, token: string, password: string} $data */
+        $data = $request->validated();
+
+        $action->execute($data);
+
+        return $this->success(message: 'Votre mot de passe a été réinitialisé.');
+    }
+
     public function forgotPassword(ForgotPasswordRequest $request, ForgotPasswordAction $action): JsonResponse
     {
         $action->execute(['email' => $request->validated('email')]);

@@ -61,6 +61,11 @@ final class TicketTypeResource extends JsonResource
 
             'saleStartDate' => $this->sale_start_date ? new DateTimeResource(resource: $this->sale_start_date) : null,
             'saleEndDate' => $this->sale_end_date ? new DateTimeResource(resource: $this->sale_end_date) : null,
+
+            // Only present where the caller eager-loads it — the order and
+            // ticket endpoints do, so "my tickets" can name the event without
+            // one extra request per ticket.
+            'event' => new EventResource($this->whenLoaded('event')),
             'createdAt' => new DateTimeResource(
                 resource: $this->created_at,
             ),

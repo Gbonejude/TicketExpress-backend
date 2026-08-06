@@ -38,7 +38,9 @@ final class AdminCredentialsMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Vos identifiants d\'administration TicketExpress');
+        // Le mail part pour tout compte créé depuis le back-office, pas
+        // seulement pour un administrateur : le sujet reste donc neutre.
+        return new Envelope(subject: 'Vos identifiants de connexion TicketExpress');
     }
 
     /**

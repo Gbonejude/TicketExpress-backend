@@ -12,6 +12,7 @@ use App\Http\Requests\v1\User\StoreRequest;
 use App\Http\Requests\v1\User\UpdateRequest;
 use App\Http\Resources\V1\UserResource;
 use App\Models\User;
+use App\Support\PersonSearch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,15 +41,20 @@ final class UserController extends Controller
     {
         $query = User::query()->latest();
 
-        if ($request->filled('search')) {
-            $search = (string) $request->input('search');
+        // Recherche mot par mot : « Komi CREPPY » doit trouver quelqu'un dont le
+        // prénom et le nom sont dans deux colonnes distinctes.
+        PersonSearch::apply(
+            $query,
+            $request->input('search'),
+            ['first_name', 'last_name', 'email', 'phone'],
+        );
 
-            $query->where(function (Builder $q) use ($search): void {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
-            });
+        // Filtre par rôle, via la relation Spatie : le rôle n'est pas une colonne
+        // de `users`, il vit dans `model_has_roles`.
+        if ($request->filled('role')) {
+            $role = (string) $request->input('role');
+
+            $query->whereHas('roles', fn (Builder $q) => $q->where('name', $role));
         }
 
         $users = $query->paginate(15);

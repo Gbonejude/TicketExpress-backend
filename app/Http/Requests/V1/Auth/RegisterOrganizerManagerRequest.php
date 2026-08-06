@@ -92,6 +92,10 @@ final class RegisterOrganizerManagerRequest extends FormRequest
             'company_name' => ['required', 'string', 'max:255', new NoXssRule],
             'description' => ['nullable', 'string', 'max:1000', new NoXssRule],
             'website' => ['nullable', 'url', 'max:255'],
+            // The organizer's logo, sent with the application. Optional: a
+            // missing logo must not block someone from applying, and the
+            // back-office lets them add one later.
+            'logo' => ['nullable', 'image', 'max:2048'],
         ];
     }
 

@@ -29,7 +29,14 @@ final class AppServiceProvider extends ServiceProvider
             model: PersonalAccessToken::class,
         );
 
-        ResetPassword::createUrlUsing(fn (object $notifiable, string $token) => config('app.url')."/reset-password?token={$token}&email={$notifiable->getEmailForPasswordReset()}");
+        // Le lien du mail ouvre la page de réinitialisation du front, pas l'API :
+        // celle-ci n'a aucune route web, le lien ne menait donc nulle part.
+        ResetPassword::createUrlUsing(fn (object $notifiable, string $token): string => sprintf(
+            '%s?token=%s&email=%s',
+            rtrim((string) config('app.password_reset_url'), '?'),
+            $token,
+            urlencode($notifiable->getEmailForPasswordReset()),
+        ));
 
         JsonResource::withoutWrapping();
 

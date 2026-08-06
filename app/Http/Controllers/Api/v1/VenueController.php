@@ -51,6 +51,15 @@ final class VenueController extends Controller
             });
         }
 
+        // Filtre par événement : montre le lieu qui accueille l'événement choisi.
+        // Utile dans l'autre sens du réflexe habituel — on part de l'affiche pour
+        // retrouver la salle, son adresse et sa capacité.
+        if ($request->filled('event_id')) {
+            $eventId = (string) $request->input('event_id');
+
+            $query->whereHas('events', fn (Builder $q) => $q->where('events.id', $eventId));
+        }
+
         $venues = $query->paginate(15);
 
         return VenueResource::collection($venues);

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -133,11 +134,22 @@ final class Event extends Model implements HasMedia
     }
 
     /**
-     * @return HasMany<Review, $this>
+     * Les billets émis pour cet événement, à travers ses types de billets.
+     *
+     * Permet de compter les billets vendus et scannés en une requête
+     * (`withCount`) au lieu d'un appel de statistiques par événement — ce dont a
+     * besoin l'écran « Événements en cours ».
+     *
+     * @return HasManyThrough<Ticket, TicketType, $this>
      */
-    public function reviews(): HasMany
+    public function tickets(): HasManyThrough
     {
-        return $this->hasMany(related: Review::class);
+        return $this->hasManyThrough(
+            related: Ticket::class,
+            through: TicketType::class,
+            firstKey: 'event_id',
+            secondKey: 'ticket_type_id',
+        );
     }
 
     /**

@@ -68,6 +68,19 @@ final class ScreenPermissionSeeder extends Seeder
             $organizer->syncPermissions($this->permissionsFor(Screen::defaultOrganizerScreens()));
         }
 
+        // 5. participant — l'acheteur de billets. Aucun écran de back-office,
+        //    mais il lui faut un libellé : sans lui, « Rôles & permissions »
+        //    retombe sur le nom technique et affiche « participant » en
+        //    minuscules au milieu de libellés soignés.
+        Role::query()
+            ->where('name', 'participant')
+            ->first()
+            ?->forceFill([
+                'is_back_office' => false,
+                'label' => 'Participant',
+            ])
+            ->save();
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 

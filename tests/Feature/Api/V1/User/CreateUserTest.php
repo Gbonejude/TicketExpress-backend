@@ -16,7 +16,7 @@ $payload = fn () => [
     'email' => 'john.doe'.rand(1, 1000).'@example.com',
     'phone' => '228'.rand(90000000, 99999999),
     'gender' => Gender::MALE->value,
-    'role' => UserRole::CLIENT->value,
+    'role' => UserRole::PARTICIPANT->value,
     'password' => 'password123',
 ];
 

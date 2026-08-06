@@ -32,8 +32,11 @@ final class PaymentController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        // `order.user` est chargé pour le portrait du participant dans la liste
+        // du back-office. Le modèle User charge déjà ses médias (`$with`), donc
+        // la photo ne coûte pas une requête par ligne.
         $query = Payment::query()
-            ->with('order')
+            ->with('order.user')
             ->latest();
 
         if ($request->filled('status')) {

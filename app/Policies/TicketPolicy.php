@@ -58,7 +58,7 @@ final class TicketPolicy
         return $this->screenOrOwner(
             $user,
             'screen.tickets',
-            $ticket->ticketType->event->organizer_id
+            $ticket->ticketType->event->organizer?->user_id
         );
     }
 
@@ -74,7 +74,7 @@ final class TicketPolicy
         return $this->screenOrOwner(
             $user,
             'screen.tickets',
-            $ticket->ticketType->event->organizer_id
+            $ticket->ticketType->event->organizer?->user_id
         );
     }
 
@@ -82,5 +82,24 @@ final class TicketPolicy
     {
         // Tickets are audit records and cannot be deleted
         return false;
+    }
+
+    /**
+     * Valider un billet à l'entrée : administration, ou l'organisateur de
+     * l'événement.
+     *
+     * La comparaison passe par `$user->organizer?->id` et non par
+     * `screenOrOwner()` : ce dernier confronte l'id de l'utilisateur à
+     * `event->organizer_id`, soit un id de compte à un id d'organisateur — deux
+     * choses qui ne s'égalent jamais. Ici il faut la bonne, car consommer un
+     * billet est irréversible.
+     */
+    public function checkIn(User $user, Ticket $ticket): bool
+    {
+        $organizerId = $ticket->ticketType?->event?->organizer_id;
+
+        return $organizerId !== null
+            && $user->organizer !== null
+            && (string) $organizerId === (string) $user->organizer->id;
     }
 }

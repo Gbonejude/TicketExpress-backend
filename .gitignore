@@ -18,6 +18,10 @@
 /public/storage
 /storage/*.key
 /storage/pail
+
+# Restes d'upload de spatie/laravel-medialibrary : fichiers temporaires recréés à
+# chaque envoi, suivis par erreur jusqu'ici.
+/storage/media-library/temp
 /vendor
 Homestead.json
 Homestead.yaml

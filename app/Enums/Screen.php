@@ -16,7 +16,6 @@ enum Screen: string
     case ORGANIZERS = 'organizers';
     case VENUES = 'venues';
     case CATEGORIES = 'categories';
-    case REVIEWS = 'reviews';
     case WITHDRAWALS = 'withdrawals';
     case USERS = 'users';
     case NOTIFICATIONS = 'notifications';
@@ -35,7 +34,6 @@ enum Screen: string
             self::ORGANIZERS => 'Organisateurs',
             self::VENUES => 'Lieux',
             self::CATEGORIES => 'Catégories',
-            self::REVIEWS => 'Avis',
             self::WITHDRAWALS => 'Retraits',
             self::USERS => 'Utilisateurs',
             self::NOTIFICATIONS => 'Notifications',
@@ -66,7 +64,6 @@ enum Screen: string
             self::USERS,
             self::ADMINISTRATORS => ['create', 'update', 'delete'],
             self::ORGANIZERS => ['update', 'delete'],
-            self::REVIEWS => ['delete'],
             default => [],
         };
     }
@@ -152,7 +149,6 @@ enum Screen: string
             self::COUPONS,
             self::BOOKINGS,
             self::PAYMENTS,
-            self::REVIEWS,
             self::WITHDRAWALS,
         ];
     }

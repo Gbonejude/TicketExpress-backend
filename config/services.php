@@ -43,6 +43,20 @@ return [
         'webhook_secret' => env('PAYGATE_WEBHOOK_SECRET'),
         'verify_ssl' => filter_var(env('PAYGATE_VERIFY_SSL', true), FILTER_VALIDATE_BOOL),
         'auto_redirect' => filter_var(env('PAYGATE_AUTO_REDIRECT', true), FILTER_VALIDATE_BOOL),
+
+        /*
+         * Refuser d'approuver un retrait que le solde marchand ne couvre pas.
+         *
+         * Désactivé par défaut, et volontairement : `check-balance` exige une IP
+         * whitelistée et une clé valide, sinon il répond un solde nul —
+         * indistinguable d'un compte réellement vide, ce qui bloquerait toute
+         * approbation en développement. À activer en production, une fois l'IP
+         * du serveur déclarée chez PayGate.
+         */
+        'enforce_payout_balance' => filter_var(
+            env('PAYGATE_ENFORCE_PAYOUT_BALANCE', false),
+            FILTER_VALIDATE_BOOL,
+        ),
     ],
 
 ];

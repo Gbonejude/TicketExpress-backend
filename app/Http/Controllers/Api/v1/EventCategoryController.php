@@ -7,11 +7,13 @@ namespace App\Http\Controllers\Api\V1;
 use App\Actions\V1\EventCategory\CreateEventCategoryAction;
 use App\Actions\V1\EventCategory\DeleteEventCategoryAction;
 use App\Actions\V1\EventCategory\UpdateEventCategoryAction;
+use App\Enums\EventStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\EventCategory\StoreEventCategoryRequest;
 use App\Http\Requests\V1\EventCategory\UpdateEventCategoryRequest;
 use App\Http\Resources\V1\EventCategoryResource;
 use App\Models\EventCategory;
+use App\Support\CatalogueCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,24 +37,47 @@ final class EventCategoryController extends Controller
      *
      * @apiResourceModel \App\Models\EventCategory
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse
     {
-        $query = EventCategory::query()
-            ->withCount('events')
-            ->latest();
+        $payload = CatalogueCache::remember(
+            'categories',
+            $request,
+            CatalogueCache::CATEGORIES_TTL,
+            static function () use ($request): array {
+                $query = EventCategory::query()
+                    ->withCount('events')
+                    // What the public tiles show. `events_count` includes events
+                    // that have already happened, so a tile advertising 25 led
+                    // to a list of 23 — the catalogue only offers upcoming ones.
+                    ->withCount(['events as upcoming_events_count' => function (Builder $q): void {
+                        $q->where('status', EventStatus::PUBLISHED)
+                            ->where(function (Builder $dates): void {
+                                $dates->where('end_date', '>=', now())->orWhereNull('end_date');
+                            });
+                    }])
+                    ->orderBy('name');
 
-        if ($request->filled('search')) {
-            $search = (string) $request->input('search');
+                if ($request->filled('search')) {
+                    $search = (string) $request->input('search');
 
-            $query->where(function (Builder $q) use ($search): void {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('slug', 'like', "%{$search}%");
-            });
-        }
+                    $query->where(function (Builder $q) use ($search): void {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('slug', 'like', "%{$search}%");
+                    });
+                }
 
-        $categories = $query->paginate(15);
+                $perPage = (int) $request->input('per_page', 50);
 
-        return EventCategoryResource::collection($categories);
+                return EventCategoryResource::collection($query->paginate(max(1, min($perPage, 100))))
+                    ->response()
+                    ->getData(true);
+            },
+        );
+
+        // Handed back raw: `NormalizeApiResponse` wraps it into the standard
+        // envelope exactly as it does for a live resource collection, so a
+        // cached response is byte-for-byte the same as an uncached one.
+        return response()->json($payload);
     }
 
     /**

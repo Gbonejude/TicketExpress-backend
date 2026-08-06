@@ -49,8 +49,12 @@ final class OrganizerApprovedMail extends Mailable implements ShouldQueue
             with: [
                 'organizer' => $this->organizer,
                 'user' => $user,
-                'loginUrl' => config('app.frontend_url').'/login',
-                'dashboardUrl' => config('app.frontend_url').'/organizer/dashboard',
+                // The back-office, not the public site: an approved organizer
+                // manages their events there and never signs in on the ticket
+                // site. Both links point at the same place on purpose — this
+                // e-mail is how they learn where to go.
+                'loginUrl' => config('app.dashboard_url').'/login',
+                'dashboardUrl' => config('app.dashboard_url'),
             ],
         );
     }

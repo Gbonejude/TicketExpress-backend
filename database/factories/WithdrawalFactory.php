@@ -23,9 +23,10 @@ final class WithdrawalFactory extends Factory
     {
         return [
             'organizer_id' => Organizer::factory(),
+            'requester_phone' => '+228'.$this->faker->numerify('########'),
             'amount' => $this->faker->randomFloat(2, 10000, 1000000),
             'status' => $this->faker->randomElement(WithdrawalStatus::cases()),
-            'payment_method' => $this->faker->randomElement(['bank_transfer', 'mobile_money', 'cash']),
+            'payment_method' => $this->faker->randomElement(['flooz', 'tmoney']),
         ];
     }
 

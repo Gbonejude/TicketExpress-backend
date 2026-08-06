@@ -56,11 +56,6 @@ final class UpdateRequest extends FormRequest
                 'type' => 'string',
                 'example' => 'johnny@example.com',
             ],
-            'password' => [
-                'description' => 'The password for the user account.',
-                'type' => 'string',
-                'example' => 'password',
-            ],
             'phone' => [
                 'description' => 'The phone number of the user.',
                 'type' => 'string',
@@ -125,7 +120,11 @@ final class UpdateRequest extends FormRequest
             'gender' => 'nullable|string',
             'role' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($id)],
-            'password' => 'nullable|string|min:8',
+            // Pas de `password` ici : un administrateur ne saisit plus le mot de
+            // passe d'autrui. Celui de la création part par mail, et son
+            // renouvellement passe par le mot de passe oublié — le seul chemin
+            // où le mot de passe ne transite par personne d'autre que son
+            // propriétaire.
             'phone' => ['nullable', 'string', 'regex:/^([0-9\s\-\+\(\)]*)$/', 'min:8', 'max:12', Rule::unique('users')->ignore($id)],
             'image' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,gif,svg|max:2048',
 

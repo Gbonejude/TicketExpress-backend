@@ -50,6 +50,8 @@ final class PayGateController extends Controller
             'order_id' => $order->id,
             'amount' => $order->total_amount,
             'method' => PaymentMethod::from(mb_strtolower($validated['network'])),
+            // PayGate returns the reference only after the initiation call.
+            'transaction_reference' => '',
             'status' => PaymentStatus::NON_PAYE,
         ]);
 

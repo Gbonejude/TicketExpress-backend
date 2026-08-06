@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\V1\Auth;
 
 use App\Actions\Contracts\Action;
+use App\Enums\UserRole;
 use App\Exceptions\ApiException;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ final class RegisterParticipantAction implements Action
                 'password' => Hash::make($password),
             ]);
 
-            $user->assignRole('client');
+            $user->assignRole(UserRole::PARTICIPANT->value);
 
             return $user;
         });

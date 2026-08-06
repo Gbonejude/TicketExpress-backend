@@ -50,7 +50,7 @@ final class CheckInPolicy
         return $this->screenOrOwner(
             $user,
             'screen.tickets',
-            $checkIn->ticket->ticketType->event->organizer_id
+            $checkIn->ticket->ticketType->event->organizer?->user_id
         );
     }
 

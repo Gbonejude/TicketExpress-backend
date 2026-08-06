@@ -26,6 +26,14 @@ final class EventCategoryResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'eventsCount' => $this->whenCounted('events'),
+            /**
+             * Published events that have not ended.
+             *
+             * This is what the public tiles and filter checkboxes must show:
+             * `eventsCount` includes past events, so a tile advertising 25 led
+             * to a catalogue of 23.
+             */
+            'upcomingEventsCount' => $this->whenCounted('upcoming_events_count'),
             'createdAt' => new DateTimeResource(
                 resource: $this->created_at,
             ),

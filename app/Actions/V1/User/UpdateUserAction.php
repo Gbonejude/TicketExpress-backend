@@ -30,7 +30,10 @@ class UpdateUserAction implements Action
     {
         $user = $data['user'];
 
-        $user->update(collect($data)->except(['user', 'image', 'role'])->toArray());
+        // `password` est écarté explicitement : il n'est plus accepté par
+        // `UpdateRequest`, et cette exclusion garantit qu'un appel interne ne
+        // puisse pas le réintroduire par la porte de derrière.
+        $user->update(collect($data)->except(['user', 'image', 'role', 'password'])->toArray());
 
         if (isset($data['role'])) {
             $user->syncRoles([$data['role']]);

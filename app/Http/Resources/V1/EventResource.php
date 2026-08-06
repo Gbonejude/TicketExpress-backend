@@ -46,12 +46,7 @@ final class EventResource extends JsonResource
             'venue' => new VenueResource($this->whenLoaded('venue')),
             'ticketTypes' => TicketTypeResource::collection($this->whenLoaded('ticketTypes')),
             'ticketTypesCount' => $this->whenCounted('ticketTypes'),
-            'reviewsCount' => $this->whenCounted('reviews'),
             'favoritesCount' => $this->whenCounted('favoritedBy'),
-            'averageRating' => $this->when(
-                $this->relationLoaded('reviews'),
-                fn () => round($this->reviews->avg('rating'), 1),
-            ),
             'createdAt' => new DateTimeResource(
                 resource: $this->created_at,
             ),

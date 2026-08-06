@@ -10,11 +10,9 @@ use Illuminate\Support\Facades\Route;
 Route::post('payments/paygate/callback', [PayGateController::class, 'callback'])
     ->name('payments.paygate.callback');
 
-// Authenticated payment operations (initiate a payment, refresh its status).
-Route::middleware('auth:sanctum')->group(function (): void {
-    Route::post('payments/initiate', [PayGateController::class, 'initiate'])->name('payments.initiate');
-    Route::get('payments/{payment}/status', [PayGateController::class, 'status'])->whereUlid('payment')->name('payments.status');
-});
+// Public checkout payments: a visitor must be able to pay without logging in.
+Route::post('payments/initiate', [PayGateController::class, 'initiate'])->name('payments.initiate');
+Route::get('payments/{payment}/status', [PayGateController::class, 'status'])->whereUlid('payment')->name('payments.status');
 
 // Back-office payments listing + merchant balance (screen.payments).
 Route::middleware(['auth:sanctum', 'role_or_permission:super-admin|screen.payments'])

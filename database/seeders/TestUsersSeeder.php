@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\OrganizerStatus;
+use App\Enums\UserRole;
 use App\Models\Organizer;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -55,7 +56,7 @@ class TestUsersSeeder extends Seeder
             $admin->assignRole('admin');
         }
 
-        // 3. Client de Test (Komi CREPPY)
+        // 3. Participant de Test (Komi CREPPY)
         $client = User::where('email', 'judasgbone@gmail.com')->first();
 
         if (! $client) {
@@ -69,8 +70,8 @@ class TestUsersSeeder extends Seeder
             ]);
         }
 
-        if (! $client->hasRole('client')) {
-            $client->assignRole('client');
+        if (! $client->hasRole(UserRole::PARTICIPANT->value)) {
+            $client->assignRole(UserRole::PARTICIPANT->value);
         }
 
         // 4. Organizer Manager de Test
@@ -110,7 +111,7 @@ class TestUsersSeeder extends Seeder
         $this->command->info('Test users seeded successfully!');
         $this->command->info('- Super Admin: superadmin@test.tg');
         $this->command->info('- Admin: admin@test.tg');
-        $this->command->info('- Client (Komi CREPPY): judasgbone@gmail.com');
+        $this->command->info('- Participant (Komi CREPPY): judasgbone@gmail.com');
         $this->command->info('- Organizer Manager: organizer@test.tg');
         $this->command->info('Password for all: Password123!');
     }

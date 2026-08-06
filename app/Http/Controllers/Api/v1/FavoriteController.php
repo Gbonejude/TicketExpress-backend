@@ -27,8 +27,8 @@ final class FavoriteController extends Controller
     {
         $events = $request->user()
             ->favoriteEvents()
-            ->with(['category', 'venue', 'organizer'])
-            ->withCount(['ticketTypes', 'reviews', 'favoritedBy'])
+            ->with(['category', 'venue', 'organizer', 'ticketTypes'])
+            ->withCount(['ticketTypes', 'favoritedBy'])
             ->latest('event_favorites.created_at')
             ->paginate(15);
 

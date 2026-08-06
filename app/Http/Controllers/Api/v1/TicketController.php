@@ -38,8 +38,15 @@ final class TicketController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        // La commande porte les lignes d'achat et son nombre de billets : c'est
+        // ce qui permet à la liste d'afficher le montant réellement payé pour ce
+        // billet et combien de billets la même commande comptait, sans un appel
+        // par ligne.
         $query = Ticket::query()
-            ->with(['ticketType.event', 'order'])
+            ->with([
+                'ticketType.event',
+                'order' => fn ($q) => $q->with('items')->withCount('tickets'),
+            ])
             ->latest();
 
         if ($request->filled('status')) {
@@ -62,11 +69,24 @@ final class TicketController extends Controller
         if ($request->filled('search')) {
             $search = (string) $request->input('search');
 
-            $query->where(function (Builder $q) use ($search): void {
-                $q->where('ticket_number', 'like', "%{$search}%")
-                    ->orWhere('attendee_name', 'like', "%{$search}%")
-                    ->orWhere('attendee_email', 'like', "%{$search}%");
-            });
+            // Mot par mot, et l'événement compris : on cherche un billet autant
+            // par le nom de la soirée que par celui de l'acheteur, et « Komi
+            // CREPPY » doit trouver quelqu'un dont le nom tient sur deux mots.
+            $words = preg_split('/\s+/', trim($search), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+            foreach ($words as $word) {
+                $query->where(function (Builder $group) use ($word): void {
+                    $group->where('ticket_number', 'like', "%{$word}%")
+                        ->orWhere('attendee_name', 'like', "%{$word}%")
+                        ->orWhere('attendee_email', 'like', "%{$word}%")
+                        ->orWhereHas('ticketType', function (Builder $type) use ($word): void {
+                            $type->where('name', 'like', "%{$word}%")
+                                ->orWhereHas('event', function (Builder $event) use ($word): void {
+                                    $event->where('title', 'like', "%{$word}%");
+                                });
+                        });
+                });
+            }
         }
 
         return TicketResource::collection($query->paginate(15));
@@ -99,10 +119,18 @@ final class TicketController extends Controller
      */
     public function checkIn(Request $request, Ticket $ticket): JsonResponse
     {
+        // Ce point d'entrée n'avait aucun contrôle d'accès : tout compte connecté
+        // pouvait consommer le billet de n'importe qui. La policy le réserve à
+        // l'administration et à l'organisateur de l'événement.
+        $this->authorize('checkIn', $ticket);
+
         try {
             $checkedInTicket = $this->checkInTicketAction->execute([
                 'ticket' => $ticket,
-                'checked_in_by' => $request->input('checked_in_by'),
+                // L'agent est celui de la session. `checked_in_by` arrivait du
+                // corps de la requête : la trace était donc déclarative, et
+                // vide dès que le client ne l'envoyait pas.
+                'checked_in_by' => $request->user()?->id,
             ]);
 
             \App\Events\ResourceChangedEvent::dispatch('tickets', 'checked-in', $checkedInTicket->id);

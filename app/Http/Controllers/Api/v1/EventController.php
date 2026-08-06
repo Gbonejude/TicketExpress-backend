@@ -15,6 +15,7 @@ use App\Http\Controllers\Controller;
 use App\Models\OrderItem;
 use App\Models\Ticket;
 use App\Models\TicketType;
+use App\Support\CatalogueCache;
 use App\Support\Commission;
 use App\Http\Requests\V1\Event\StoreEventRequest;
 use App\Http\Requests\V1\Event\UpdateEventRequest;
@@ -39,6 +40,17 @@ final class EventController extends Controller
      * @queryParam status Filter by status (draft, published, cancelled, finished). Example: published
      * @queryParam category_id Filter by category ULID. Example: 01HXE2K3M4N5P6Q7R8S9T0V1W3
      * @queryParam organizer_id Filter by organizer ULID. Example: 01HXE2K3M4N5P6Q7R8S9T0V1W2
+     * @queryParam venue_id Filter by venue ULID. Example: 01HXE2K3M4N5P6Q7R8S9T0V1W4
+     * @queryParam event_type Filter by type (physical, online). Example: physical
+     * @queryParam search Match title, description, category or venue. Example: concert
+     * @queryParam organizer_search Match the organizer company name. Example: Lomé Live
+     * @queryParam city Match the venue city. Example: Lomé
+     * @queryParam when Restrict to `upcoming` or `past` events. Example: upcoming
+     * @queryParam starts_after Only events starting on or after this date. Example: 2026-08-01
+     * @queryParam starts_before Only events starting on or before this date. Example: 2026-08-31
+     * @queryParam max_price Only events with a ticket at or below this price. Example: 25000
+     * @queryParam sort Ordering: recent, price-asc, price-desc, date-asc, date-desc. Example: price-asc
+     * @queryParam per_page Items per page (1-50, default 15). Example: 9
      *
      * @response 200 {
      *   "success": true,
@@ -67,12 +79,35 @@ final class EventController extends Controller
      *   ]
      * }
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse
+    {
+        $payload = CatalogueCache::remember(
+            'events',
+            $request,
+            CatalogueCache::EVENTS_TTL,
+            fn (): array => $this->buildIndex($request)->response()->getData(true),
+        );
+
+        // Returned raw so `NormalizeApiResponse` wraps it exactly as it wraps a
+        // live resource collection: a cached response is indistinguishable.
+        return response()->json($payload);
+    }
+
+    /**
+     * The catalogue query behind {@see index()}.
+     *
+     * Split out so the caching above reads as caching, and this reads as the
+     * filtering it is.
+     */
+    private function buildIndex(Request $request): AnonymousResourceCollection
     {
         $query = Event::query()
-            ->with(['category', 'venue', 'organizer'])
-            ->withCount(['ticketTypes', 'reviews', 'favoritedBy'])
-            ->latest();
+            // `ticketTypes` is eager-loaded, not just counted: the cards show
+            // "à partir de X" and grey out a sold-out event, and both are
+            // derived from the ticket types. Without them every card read
+            // "Indisponible" and "Complet" — `[].every()` is true.
+            ->with(['category', 'venue', 'organizer', 'ticketTypes'])
+            ->withCount(['ticketTypes', 'favoritedBy']);
 
         // Client side (unauthenticated): hide events of deactivated organizers.
         // Back-office users still see everything.
@@ -94,9 +129,132 @@ final class EventController extends Controller
             $query->where('organizer_id', $request->input('organizer_id'));
         }
 
-        $events = $query->paginate(15);
+        if ($request->filled('venue_id')) {
+            $query->where('venue_id', $request->input('venue_id'));
+        }
+
+        if ($request->filled('event_type')) {
+            $query->where('event_type', $request->input('event_type'));
+        }
+
+        // Free-text search for the public catalogue: title, description,
+        // category, venue and organizer. A visitor types "Lomé", "concert" or
+        // a promoter's name as readily as a title, and the search box is the
+        // one place where all of those should work.
+        if ($request->filled('search')) {
+            $search = (string) $request->input('search');
+
+            $query->where(function (Builder $q) use ($search): void {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('category', fn (Builder $c) => $c->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%"))
+                    ->orWhereHas('venue', fn (Builder $v) => $v->where('city', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%"))
+                    ->orWhereHas('organizer', fn (Builder $o) => $o->where('company_name', 'like', "%{$search}%"));
+            });
+        }
+
+        // Separate from `search` on purpose. The header's quick search must not
+        // surface every event of an agency whose name happens to contain the
+        // term; the explore page's own "Organisateur" filter is where someone
+        // deliberately looks a promoter up.
+        if ($request->filled('organizer_search')) {
+            $name = (string) $request->input('organizer_search');
+
+            $query->whereHas('organizer', fn (Builder $o) => $o->where('company_name', 'like', "%{$name}%"));
+        }
+
+        if ($request->filled('city')) {
+            $city = (string) $request->input('city');
+
+            $query->whereHas('venue', fn (Builder $v) => $v->where('city', 'like', "%{$city}%"));
+        }
+
+        // `upcoming` / `past` are decided on the end date: an event that started
+        // yesterday and runs for three days is still upcoming to a buyer.
+        $when = $request->input('when');
+
+        if ($when === 'upcoming') {
+            $query->where(function (Builder $q): void {
+                $q->where('end_date', '>=', now())->orWhereNull('end_date');
+            });
+        } elseif ($when === 'past') {
+            $query->where('end_date', '<', now());
+        }
+
+        // Date window behind the "ce week-end / la semaine prochaine / ce
+        // mois-ci" filters. Both bounds are inclusive and applied to the start.
+        if ($request->filled('starts_after')) {
+            $query->where('start_date', '>=', $request->date('starts_after'));
+        }
+
+        if ($request->filled('starts_before')) {
+            $query->where('start_date', '<=', $request->date('starts_before'));
+        }
+
+        // Price ceiling: keep events with at least one ticket type at or below
+        // it, using the same effective price as the sort below.
+        //
+        // The bound parameter is CAST explicitly because PDO sends it as a
+        // string: SQLite then applies its type-ordering rule, under which every
+        // number compares as smaller than every text value, and the filter
+        // silently matches everything. The cast keeps the comparison numeric on
+        // both SQLite (tests) and MySQL (production).
+        if ($request->filled('max_price')) {
+            $ceiling = (float) $request->input('max_price');
+
+            $query->whereHas('ticketTypes', function (Builder $q) use ($ceiling): void {
+                $q->whereRaw(
+                    '(CASE WHEN promotional_price IS NOT NULL'
+                    .' AND (promotion_start_date IS NULL OR promotion_start_date <= ?)'
+                    .' AND (promotion_end_date IS NULL OR promotion_end_date >= ?)'
+                    .' THEN promotional_price ELSE price END) <= CAST(? AS DECIMAL(12,2))',
+                    [now(), now(), $ceiling],
+                );
+            });
+        }
+
+        $this->applySort($query, (string) $request->input('sort', 'recent'));
+
+        $perPage = (int) $request->input('per_page', 15);
+        $events = $query->paginate(max(1, min($perPage, 50)));
 
         return EventResource::collection($events);
+    }
+
+    /**
+     * Order the catalogue.
+     *
+     * Sorting by price orders on the cheapest ticket type of each event, which
+     * is the figure the card shows ("à partir de X"). The effective price is
+     * recomputed in SQL rather than read from a column because a promotional
+     * price only counts while its window is open — the same rule as
+     * {@see TicketType::currentPrice()}.
+     *
+     * @param  Builder<Event>  $query
+     */
+    private function applySort(Builder $query, string $sort): void
+    {
+        if ($sort === 'price-asc' || $sort === 'price-desc') {
+            $query->orderBy(
+                TicketType::query()
+                    ->selectRaw('MIN(CASE WHEN promotional_price IS NOT NULL'
+                        .' AND (promotion_start_date IS NULL OR promotion_start_date <= ?)'
+                        .' AND (promotion_end_date IS NULL OR promotion_end_date >= ?)'
+                        .' THEN promotional_price ELSE price END)', [now(), now()])
+                    ->whereColumn('ticket_types.event_id', 'events.id'),
+                $sort === 'price-asc' ? 'asc' : 'desc',
+            );
+
+            return;
+        }
+
+        match ($sort) {
+            'date-asc' => $query->orderBy('start_date'),
+            'date-desc' => $query->orderByDesc('start_date'),
+            default => $query->latest(),
+        };
     }
 
     /**
@@ -153,13 +311,26 @@ final class EventController extends Controller
      *   }
      * }
      */
-    public function show(Event $id): JsonResponse
+    public function show(Request $request, Event $id): JsonResponse
     {
-        $id->load(['organizer', 'category', 'venue', 'ticketTypes', 'reviews'])
-            ->loadCount(['ticketTypes', 'reviews']);
+        // Cached like the listing, and for the same short window: an event page
+        // is the most-hit URL on the site once a link circulates, and its five
+        // eager-loaded relations make it the most expensive to build. 60s keeps
+        // "dernières places" honest.
+        $payload = CatalogueCache::remember(
+            'event:'.$id->id,
+            $request,
+            CatalogueCache::EVENTS_TTL,
+            static function () use ($id): array {
+                $id->load(['organizer', 'category', 'venue', 'ticketTypes', 'occurrences'])
+                    ->loadCount(['ticketTypes', 'favoritedBy']);
+
+                return (new EventResource($id))->response()->getData(true);
+            },
+        );
 
         return $this->success(
-            data: new EventResource($id),
+            data: $payload['data'] ?? $payload,
         );
     }
 
@@ -307,10 +478,30 @@ final class EventController extends Controller
      * Per ticket type: max quantity, sold, scanned (checked-in), not scanned,
      * not sold, revenue and the TicketExpress commission — plus event totals.
      *
+     * Un organisateur ne lit que la billetterie de ses propres événements. La
+     * route était ouverte à tout organisateur : le chiffre d'affaires d'un
+     * confrère se lisait avec son seul identifiant d'événement.
+     *
      * @urlParam event string required The ID of the event (ULID)
+     *
+     * @response 403 {
+     *   "success": false,
+     *   "message": "Vous ne pouvez consulter que la billetterie de vos propres événements."
+     * }
      */
-    public function stats(Event $id): JsonResponse
+    public function stats(Request $request, Event $id): JsonResponse
     {
+        $user = $request->user();
+
+        if ($user !== null
+            && ! $user->hasAnyRole(['admin', 'super-admin'])
+            && (string) ($user->organizer?->id) !== (string) $id->organizer_id) {
+            return $this->error(
+                message: 'Vous ne pouvez consulter que la billetterie de vos propres événements.',
+                status: 403,
+            );
+        }
+
         $ticketTypes = $id->ticketTypes()->get();
 
         $rows = $ticketTypes->map(function (TicketType $tt): array {

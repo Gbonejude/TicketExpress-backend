@@ -25,6 +25,24 @@ final class NotificationController extends Controller
     }
 
     /**
+     * Unread count
+     *
+     * The badge in the header needs the number, not the rows. Without this the
+     * front had to fetch the first page of notifications and count what it got,
+     * which is only ever right for the first twenty.
+     *
+     * @authenticated
+     *
+     * @response 200 {"success": true, "data": {"unread": 3}}
+     */
+    public function unreadCount(Request $request): JsonResponse
+    {
+        return $this->success([
+            'unread' => $request->user()->unreadNotifications()->count(),
+        ]);
+    }
+
+    /**
      * Mark a notification as read
      */
     public function markAsRead(Request $request, string $id): JsonResponse
@@ -35,9 +53,27 @@ final class NotificationController extends Controller
 
         $notification->markAsRead();
 
-        return response()->json([
-            'message' => 'Notification marquée comme lue.',
-        ]);
+        return $this->success(message: 'Notification marquée comme lue.');
+    }
+
+    /**
+     * Mark every notification as read
+     *
+     * One statement instead of one request per row, which is what the front had
+     * to do before.
+     *
+     * @authenticated
+     *
+     * @response 200 {"success": true, "message": "3 notification(s) marquée(s) comme lue(s)."}
+     */
+    public function markAllAsRead(Request $request): JsonResponse
+    {
+        $marked = $request->user()->unreadNotifications()->update(['read_at' => now()]);
+
+        return $this->success(
+            ['marked' => $marked],
+            "{$marked} notification(s) marquée(s) comme lue(s).",
+        );
     }
 
     /**
