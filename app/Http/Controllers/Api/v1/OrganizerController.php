@@ -116,6 +116,19 @@ final class OrganizerController extends Controller
             ->withCount('events')
             ->latest();
 
+        // Côté visiteur, la liste ne contient que les organisateurs approuvés et
+        // actifs — comme la liste des événements, qui écarte déjà ceux d'un
+        // organisateur désactivé. Un dossier encore en attente, ou refusé, n'a
+        // rien à faire dans l'annuaire public : il y apparaissait comme une fiche
+        // sans le moindre événement, et le refus était rendu public alors qu'il
+        // ne concerne que le demandeur et l'administration.
+        //
+        // Le back-office, lui, continue de tout voir : c'est là qu'on approuve.
+        if ($request->user() === null) {
+            $query->where('status', OrganizerStatus::APPROVED)
+                ->where('is_active', true);
+        }
+
         if ($request->filled('search')) {
             $search = (string) $request->input('search');
 

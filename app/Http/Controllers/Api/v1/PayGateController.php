@@ -184,7 +184,34 @@ final class PayGateController extends Controller
             'paid_at' => $paidAt,
         ]);
 
-        $payment->order?->update([
+        $order = $payment->order;
+
+        // Le paiement est enregistré — l'argent est bien arrivé — mais une
+        // commande annulée ne repasse pas à « payée » toute seule.
+        //
+        // Ses places ont été rendues au stock par l'annulation (voir
+        // CancelUnpaidOrdersCommand) et ont pu être revendues depuis : la remettre
+        // à « payée » émettrait des billets pour des sièges qui n'existent plus.
+        // Entre vendre deux fois la même place et faire traiter un remboursement
+        // par un humain, c'est le remboursement qui se répare.
+        //
+        // La trace est en `error` pour qu'elle remonte : il y a de l'argent
+        // encaissé sans contrepartie, et personne ne le verra dans une ligne
+        // d'information.
+        if ($order !== null && $order->status === OrderStatus::CANCELLED) {
+            Log::error('Paiement reçu sur une commande annulée — remboursement à traiter', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'payment_id' => $payment->id,
+                'amount' => $payment->amount,
+            ]);
+
+            \App\Events\ResourceChangedEvent::dispatch('payments', 'paid', $payment->id);
+
+            return;
+        }
+
+        $order?->update([
             'status' => OrderStatus::PAID,
             'paid_at' => $paidAt,
         ]);

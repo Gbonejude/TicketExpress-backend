@@ -23,6 +23,16 @@ return new class extends Migration
             $table->dateTime('end_date');
             $table->integer('max_attendees')->nullable();
             $table->string('status')->default('draft'); // draft, published, cancelled, finished
+
+            $table->string('event_type')->default('physical');
+            $table->string('online_url')->nullable();
+
+            $table->boolean('refund_allowed')->default(true);
+            $table->unsignedInteger('refund_days_before')->default(0);
+
+            $table->decimal('checkin_open_hours_before', 5, 2)->nullable();
+            $table->decimal('checkin_close_hours_after', 5, 2)->nullable();
+
             $table->timestamp('published_at')->nullable();
             $table->timestamp('cancelled_at')->nullable();
             $table->timestamps();

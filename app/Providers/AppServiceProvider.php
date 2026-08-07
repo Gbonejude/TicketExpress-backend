@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Contracts\Auth\OtpGenerator;
 use App\Contracts\Auth\OtpSender;
+use App\Enums\UserRole;
 use App\Models\PersonalAccessToken;
 use App\Models\User;
 use App\Repositories\Concerns\OneSignalContract;
@@ -31,9 +32,16 @@ final class AppServiceProvider extends ServiceProvider
 
         // Le lien du mail ouvre la page de réinitialisation du front, pas l'API :
         // celle-ci n'a aucune route web, le lien ne menait donc nulle part.
+        //
+        // Et pas n'importe quel front : le destinataire décide. Un participant
+        // était renvoyé vers le back-office, où il n'a pas de compte à ouvrir —
+        // il changeait son mot de passe puis se retrouvait devant un écran de
+        // connexion qui le refuse. Le rôle est lu sur le notifiable plutôt que
+        // pris dans la requête : une URL de redirection choisie par l'appelant
+        // est ce qui transforme un mail de réinitialisation en hameçonnage.
         ResetPassword::createUrlUsing(fn (object $notifiable, string $token): string => sprintf(
             '%s?token=%s&email=%s',
-            rtrim((string) config('app.password_reset_url'), '?'),
+            rtrim((string) config($this->passwordResetUrlKey($notifiable)), '?'),
             $token,
             urlencode($notifiable->getEmailForPasswordReset()),
         ));
@@ -45,6 +53,24 @@ final class AppServiceProvider extends ServiceProvider
         Gate::before(function (User $user, string $ability) {
             return $user->hasRole('super-admin') ? true : null;
         });
+    }
+
+    /**
+     * La page de réinitialisation qui correspond au destinataire.
+     *
+     * Le back-office pour qui y travaille — administration et organisateurs — le
+     * site public pour tous les autres. Un compte sans rôle du tout (créé mais
+     * pas encore rattaché) est traité comme un participant : c'est le cas le plus
+     * probable, et c'est le front sur lequel il pourra effectivement se connecter.
+     */
+    private function passwordResetUrlKey(object $notifiable): string
+    {
+        $isStaff = $notifiable instanceof User
+            && $notifiable->hasAnyRole(UserRole::staff());
+
+        return $isStaff
+            ? 'app.password_reset_url'
+            : 'app.participant_password_reset_url';
     }
 
     /**

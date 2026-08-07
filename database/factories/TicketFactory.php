@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Ticket;
 use App\Models\TicketType;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Ticket>
@@ -27,7 +28,13 @@ final class TicketFactory extends Factory
             'ticket_type_id' => TicketType::factory(),
             'attendee_name' => $this->faker->name(),
             'attendee_email' => $this->faker->safeEmail(),
-            'qr_code' => $this->faker->uuid(),
+            // Même charge que la production (voir OrderPaidListener) : 40
+            // caractères aléatoires. C'est **le** secret qui autorise l'entrée,
+            // et c'est ce que lit le portique — un uuid de faker donnait un code
+            // de forme différente de celle des billets réellement émis, donc des
+            // données de démonstration qui ne se comportaient pas comme les
+            // vraies au scan.
+            'qr_code' => Str::random(40),
             // Même forme que la production (voir AppSupportTicketNumber) : préfixe
             // d'événement, année, séquence.
             'ticket_number' => strtoupper($this->faker->bothify('????')).'-'.now()->year.'-'.$this->faker->unique()->numerify('####'),

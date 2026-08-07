@@ -13,7 +13,9 @@ use App\Http\Requests\V1\TicketType\UpdateTicketTypeRequest;
 use App\Http\Resources\V1\TicketTypeResource;
 use App\Models\Event;
 use App\Models\TicketType;
+use App\Support\CatalogueAudience;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -36,8 +38,17 @@ final class TicketTypeController extends Controller
      *
      * @apiResourceModel \App\Models\TicketType
      */
-    public function index(Event $event): AnonymousResourceCollection
+    public function index(Request $request, Event $event): AnonymousResourceCollection
     {
+        // Même règle que la fiche de l'événement : rien du côté public sur un
+        // événement terminé. Sinon la porte de devant est fermée et celle-ci
+        // rend encore les tarifs et les prix de l'an dernier.
+        if (! CatalogueAudience::requestSeesEverything($request)
+            && $event->end_date !== null
+            && $event->end_date->isPast()) {
+            abort(404);
+        }
+
         $ticketTypes = $event->ticketTypes()->latest()->paginate(15);
 
         return TicketTypeResource::collection($ticketTypes);

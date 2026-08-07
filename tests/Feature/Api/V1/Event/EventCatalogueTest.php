@@ -80,11 +80,29 @@ it('filters by city', function (): void {
     expect($response->json('data'))->toHaveCount(1);
 });
 
-it('splits upcoming from past events on the end date', function (): void {
+/**
+ * Le découpage se fait sur la date de fin — mais le côté public n'a plus qu'une
+ * moitié à voir.
+ *
+ * Ce test attendait que `when=past` rende l'événement passé à un visiteur
+ * anonyme. Ce n'est plus le cas : les événements terminés ne sont servis qu'à
+ * l'exploitation, et `when=past` répond donc vide au public. Ce qui compte
+ * encore ici, c'est que `when=upcoming` filtre bien sur la date de **fin** — un
+ * événement commencé et non terminé reste à venir pour un acheteur.
+ *
+ * La règle de visibilité elle-même, avec ses trois publics, est couverte par
+ * `PastEventVisibilityTest`.
+ */
+it('treats an event as upcoming until its end date has passed', function (): void {
     Event::factory()->for($this->organizer)->create([
         'start_date' => now()->addDays(5),
         'end_date' => now()->addDays(6),
         'title' => 'À venir',
+    ]);
+    Event::factory()->for($this->organizer)->create([
+        'start_date' => now()->subDay(),
+        'end_date' => now()->addDay(),
+        'title' => 'Commencé hier, pas fini',
     ]);
     Event::factory()->for($this->organizer)->create([
         'start_date' => now()->subDays(10),
@@ -92,13 +110,15 @@ it('splits upcoming from past events on the end date', function (): void {
         'title' => 'Passé',
     ]);
 
-    $upcoming = $this->getJson('/api/v1/events?when=upcoming')->assertOk();
-    $past = $this->getJson('/api/v1/events?when=past')->assertOk();
+    $upcoming = collect($this->getJson('/api/v1/events?when=upcoming')->assertOk()->json('data'))
+        ->pluck('title');
 
-    expect($upcoming->json('data'))->toHaveCount(1)
-        ->and($upcoming->json('data.0.title'))->toBe('À venir')
-        ->and($past->json('data'))->toHaveCount(1)
-        ->and($past->json('data.0.title'))->toBe('Passé');
+    expect($upcoming)->toHaveCount(2)
+        ->and($upcoming)->toContain('À venir')
+        ->and($upcoming)->toContain('Commencé hier, pas fini')
+        ->and($upcoming)->not->toContain('Passé')
+        // Et le public n'obtient rien en demandant explicitement le passé.
+        ->and($this->getJson('/api/v1/events?when=past')->assertOk()->json('data'))->toBeEmpty();
 });
 
 it('sorts by the cheapest ticket type', function (): void {

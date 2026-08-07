@@ -29,5 +29,16 @@ final class ScheduleBootstrapper
             ->hourly()
             ->withoutOverlapping()
             ->runInBackground();
+
+        // Une commande non payée retient ses places : le stock est engagé dès la
+        // création, sinon deux acheteurs se disputeraient le même siège pendant
+        // qu'ils règlent. À la minute, et non à l'heure : le délai accordé est de
+        // quinze minutes, et un passage horaire le transformerait en une heure et
+        // quart pour qui a le mauvais timing — assez pour qu'un événement qui se
+        // remplit reste bloqué par des paniers morts.
+        $schedule->command('orders:cancel-unpaid')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 }
