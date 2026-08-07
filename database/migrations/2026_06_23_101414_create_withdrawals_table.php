@@ -14,8 +14,18 @@ return new class extends Migration
         Schema::create('withdrawals', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('organizer_id')->constrained('organizers')->onDelete('cascade');
+
+            $table->string('requester_phone')->nullable();
+
             $table->decimal('amount', 10, 2);
             $table->string('status')->default('pending'); // pending, approved, rejected, paid
+
+            $table->timestamp('processed_at')->nullable();
+            $table->foreignUlid('processed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('notes')->nullable();
+
+            $table->string('payout_reference')->nullable();
+
             $table->string('payment_method');
             $table->timestamps();
 

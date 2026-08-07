@@ -219,8 +219,13 @@
                 </div>
 
                 <div class="qr-section">
+                    {{-- Image embarquée en base64 : dompdf ne rend pas un <svg>
+                         inline, et ne peut pas aller chercher l'URL protégée par
+                         jeton pendant le rendu. --}}
                     <div class="qr-code">
-                        {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(200)->generate($ticket->qr_code) !!}
+                        <img src="{{ \App\Support\QrImage::dataUri($ticket->qr_code, 200) }}"
+                             alt="QR code du billet {{ $ticket->ticket_number }}"
+                             width="200" height="200">
                     </div>
                     <p style="color: #666; font-size: 10px; margin-top: 10px;">
                         Scannez ce QR code à l'entrée

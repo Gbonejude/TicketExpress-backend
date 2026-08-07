@@ -74,11 +74,45 @@ final class TicketType extends Model
     }
 
     /**
-     * Get the availability status based on sold quantity and remaining tickets.
-     * Priority: SOLD_OUT > percentage-based (if >= 70%) > LIMITED > percentage-based (if < 70%) > AVAILABLE
+     * Whether the sale window is open right now.
+     *
+     * `null` de chaque côté vaut « pas de borne » : un tarif sans date de fin
+     * reste en vente, comme avant l'introduction de cette vérification.
+     */
+    public function isOnSale(): bool
+    {
+        $now = now();
+
+        if ($this->sale_start_date !== null && $now->lt($this->sale_start_date)) {
+            return false;
+        }
+
+        return $this->sale_end_date === null || $now->lte($this->sale_end_date);
+    }
+
+    /**
+     * Get the availability status based on the sale window, sold quantity and
+     * remaining tickets.
+     *
+     * Priority: sale window > SOLD_OUT > percentage-based (if >= 70%) > LIMITED >
+     * percentage-based (if < 70%) > AVAILABLE
+     *
+     * La fenêtre passe **avant** le stock : `sale_start_date` et `sale_end_date`
+     * étaient écrites et jamais lues, si bien qu'un événement terminé affichait
+     * encore ses tarifs comme achetables. Et « Vente fermée » est plus juste que
+     * « Complet » sur un concert d'il y a six mois : il restait des places, la
+     * billetterie a simplement fermé.
      */
     public function availabilityStatus(): AvailabilityStatus
     {
+        if ($this->sale_start_date !== null && now()->lt($this->sale_start_date)) {
+            return AvailabilityStatus::SALE_NOT_STARTED;
+        }
+
+        if (! $this->isOnSale()) {
+            return AvailabilityStatus::SALE_CLOSED;
+        }
+
         $remaining = $this->remainingTickets();
         $soldPercentage = $this->soldPercentage();
 

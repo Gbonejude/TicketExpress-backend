@@ -64,9 +64,19 @@ return [
     | web : le lien était mort. Cette valeur permet de désigner le front qui
     | porte la page (back-office par défaut).
     |
+    | Deux fronts, donc deux pages : un participant n'a rien à faire dans le
+    | back-office, et le lien qui l'y envoyait le déposait sur un écran où il ne
+    | peut même pas se connecter ensuite. Le choix se fait sur le rôle du
+    | destinataire, voir AppServiceProvider.
+    |
     */
 
     'password_reset_url' => env('PASSWORD_RESET_URL', 'http://localhost:5174/template/reset-password'),
+
+    'participant_password_reset_url' => env(
+        'PARTICIPANT_PASSWORD_RESET_URL',
+        'http://localhost:5173/reinitialiser-mot-de-passe',
+    ),
 
     /*
     |--------------------------------------------------------------------------

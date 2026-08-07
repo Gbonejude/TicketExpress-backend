@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\EventResource;
 use App\Models\Event;
+use App\Support\CatalogueAudience;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -29,10 +31,20 @@ final class FavoriteController extends Controller
             ->favoriteEvents()
             ->with(['category', 'venue', 'organizer', 'ticketTypes'])
             ->withCount(['ticketTypes', 'favoritedBy'])
-            ->latest('event_favorites.created_at')
-            ->paginate(15);
+            ->latest('event_favorites.created_at');
 
-        return EventResource::collection($events);
+        // Un favori sur un événement terminé n'a plus rien à ouvrir : sa fiche
+        // n'est plus servie côté public. La carte restait affichée et menait à
+        // une page introuvable. Le rattachement, lui, n'est pas supprimé — ce
+        // n'est pas au rendu d'une liste de décider d'effacer les données de
+        // quelqu'un.
+        if (! CatalogueAudience::requestSeesEverything($request)) {
+            $events->where(function (Builder $q): void {
+                $q->where('end_date', '>=', now())->orWhereNull('end_date');
+            });
+        }
+
+        return EventResource::collection($events->paginate(15));
     }
 
     /**

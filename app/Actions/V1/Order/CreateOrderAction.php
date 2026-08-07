@@ -70,6 +70,14 @@ final class CreateOrderAction implements Action
                     throw new \DomainException('Le type de ticket n\'existe pas.');
                 }
 
+                // La billetterie est-elle encore ouverte ? Rien ne le vérifiait :
+                // le stock seul décidait, donc un événement terminé — ou dont la
+                // vente était fermée — encaissait toujours. C'est ici que la
+                // règle doit vivre, et pas seulement dans l'affichage : le
+                // catalogue peut masquer l'événement, une requête directe sur cet
+                // endpoint passe outre.
+                $this->assertSaleIsOpen($ticketType);
+
                 $available = $ticketType->quantity - $ticketType->sold_quantity;
 
                 if ($available < $item['quantity']) {
@@ -86,13 +94,23 @@ final class CreateOrderAction implements Action
                 // Increment sold_quantity atomically
                 $ticketType->increment('sold_quantity', $item['quantity']);
 
-                $subtotal = $ticketType->price * $item['quantity'];
+                // Le prix effectif, promotion comprise — et non `price`.
+                //
+                // La caisse facturait le tarif plein pendant que la fiche de
+                // l'événement affichait le prix promotionnel et que le panier le
+                // totalisait : le client voyait « 3 750 F » et était débité
+                // 5 000 F. C'est `currentPrice()` qui porte la règle (promotion
+                // active seulement dans sa fenêtre), et c'est déjà elle que lisent
+                // l'affichage, le tri par prix et le filtre de prix.
+                $unitPrice = $ticketType->currentPrice();
+
+                $subtotal = $unitPrice * $item['quantity'];
                 $totalAmount += $subtotal;
 
                 $orderItems[] = [
                     'ticket_type_id' => $ticketType->id,
                     'quantity' => $item['quantity'],
-                    'unit_price' => $ticketType->price,
+                    'unit_price' => $unitPrice,
                     'subtotal' => $subtotal,
                 ];
             }
@@ -149,5 +167,47 @@ final class CreateOrderAction implements Action
 
             return $order;
         });
+    }
+
+    /**
+     * Refuse une ligne dont la billetterie est fermée.
+     *
+     * Trois motifs distincts, parce que trois messages différents : « pas encore
+     * ouvert » invite à revenir, « terminé » et « fermé » non. Un acheteur à qui
+     * l'on répond « stock insuffisant » sur un concert de l'an dernier chercherait
+     * à recharger la page.
+     *
+     * L'événement est consulté explicitement, et non déduit de la fenêtre de
+     * vente : un tarif sans `sale_end_date` sur un événement passé serait sinon
+     * encore vendable, et c'est le cas de tous les tarifs créés avant que ces
+     * dates ne soient renseignées.
+     *
+     * @throws \DomainException
+     */
+    private function assertSaleIsOpen(TicketType $ticketType): void
+    {
+        $event = $ticketType->loadMissing('event')->event;
+
+        if ($event !== null && $event->end_date !== null && $event->end_date->isPast()) {
+            throw new \DomainException(
+                sprintf('L\'événement « %s » est terminé : la billetterie est fermée.', $event->title),
+            );
+        }
+
+        if ($ticketType->sale_start_date !== null && now()->lt($ticketType->sale_start_date)) {
+            throw new \DomainException(
+                sprintf(
+                    'La vente de « %s » ouvre le %s.',
+                    $ticketType->name,
+                    $ticketType->sale_start_date->format('d/m/Y à H:i'),
+                ),
+            );
+        }
+
+        if (! $ticketType->isOnSale()) {
+            throw new \DomainException(
+                sprintf('La vente de « %s » est fermée.', $ticketType->name),
+            );
+        }
     }
 }

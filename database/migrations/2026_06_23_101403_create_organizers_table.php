@@ -18,7 +18,14 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('website')->nullable();
             $table->string('status')->default('pending'); // pending, approved, rejected
+
+            $table->boolean('is_active')->default(true);
+
             $table->text('rejection_reason')->nullable();
+
+            $table->decimal('checkin_open_hours_before', 5, 2)->nullable();
+            $table->decimal('checkin_close_hours_after', 5, 2)->nullable();
+
             $table->timestamps();
 
             $table->index('user_id');

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Enums\AvailabilityStatus;
+use App\Enums\OrganizerStatus;
 use App\Models\Event;
 use App\Models\EventCategory;
 use App\Models\EventOccurrence;
@@ -47,11 +49,33 @@ it('gives every event a banner image', function (): void {
     });
 });
 
-it('gives every organizer a logo and a Togolese contact', function (): void {
-    Organizer::query()->with(['media', 'user'])->get()->each(function (Organizer $organizer): void {
+// Borné aux organisateurs approuvés : ce sont eux qui paraissent sur le site, et
+// c'est leur logo manquant qui se voit. Un dossier encore à l'étude n'est pas
+// tenu d'avoir déposé son visuel — le seeder en laisse justement un sans, pour
+// que l'écran d'approbation montre aussi ce cas.
+it('gives every approved organizer a logo and a Togolese contact', function (): void {
+    $approved = Organizer::query()
+        ->where('status', OrganizerStatus::APPROVED)
+        ->with(['media', 'user'])
+        ->get();
+
+    expect($approved)->not->toBeEmpty();
+
+    $approved->each(function (Organizer $organizer): void {
         expect($organizer->logo)->not->toBeNull()
             ->and($organizer->user)->not->toBeNull()
             ->and($organizer->user->phone)->toStartWith('+228');
+    });
+});
+
+it('leaves organizer applications waiting for a decision', function (): void {
+    expect(Organizer::where('status', OrganizerStatus::PENDING)->count())->toBeGreaterThan(0)
+        ->and(Organizer::where('status', OrganizerStatus::REJECTED)->count())->toBeGreaterThan(0);
+
+    // Un refus sans motif n'est pas opposable : c'est la seule chose qu'on peut
+    // rendre au demandeur pour qu'il corrige son dossier.
+    Organizer::where('status', OrganizerStatus::REJECTED)->get()->each(function (Organizer $organizer): void {
+        expect($organizer->rejection_reason)->not->toBeNull();
     });
 });
 
@@ -108,6 +132,51 @@ it('makes those promotions currently active', function (): void {
         ->count();
 
     expect($active)->toBeGreaterThanOrEqual(5);
+});
+
+it('puts every visible event on sale, ongoing ones included', function (): void {
+    // « Vente fermée » ou « Bientôt en vente » ne doit apparaître sur aucun
+    // événement que le site propose. Deux réglages le provoquaient : une
+    // fermeture calée sur le *début* de l'événement — ce qui fermait les
+    // événements en cours, alors qu'un retardataire doit pouvoir acheter — et une
+    // ouverture huit semaines avant, encore dans le futur pour un événement
+    // lointain. Seul l'épuisement du stock a le droit de bloquer une vente.
+    $blocked = Event::query()
+        ->with('ticketTypes')
+        ->where('end_date', '>=', now())
+        ->get()
+        ->flatMap(fn (Event $event) => $event->ticketTypes->map(
+            fn (TicketType $tier) => ['event' => $event->title, 'tier' => $tier->name, 'status' => $tier->availabilityStatus()],
+        ))
+        ->filter(fn (array $row) => in_array(
+            $row['status'],
+            [AvailabilityStatus::SALE_CLOSED, AvailabilityStatus::SALE_NOT_STARTED],
+            true,
+        ));
+
+    expect($blocked)->toBeEmpty();
+});
+
+it('leaves one event completely sold out, and one tier of another', function (): void {
+    // Le tirage aléatoire des ventes ne monte jamais à 100 %, donc « Complet »
+    // n'apparaissait nulle part : ni sur une carte du catalogue, ni sur le bouton
+    // d'une fiche, ni au refus de la caisse. Les deux cas sont posés à la main.
+    $fullyBooked = Event::query()
+        ->with('ticketTypes')
+        ->get()
+        ->filter(fn (Event $event) => $event->ticketTypes->isNotEmpty()
+            && $event->ticketTypes->every(fn (TicketType $tier) => $tier->remainingTickets() === 0));
+
+    expect($fullyBooked)->not->toBeEmpty();
+
+    $partiallyBooked = Event::query()
+        ->with('ticketTypes')
+        ->get()
+        ->filter(fn (Event $event) => $event->ticketTypes->count() > 1
+            && $event->ticketTypes->contains(fn (TicketType $tier) => $tier->remainingTickets() === 0)
+            && $event->ticketTypes->contains(fn (TicketType $tier) => $tier->remainingTickets() > 0));
+
+    expect($partiallyBooked)->not->toBeEmpty();
 });
 
 it('creates paid and pending orders with issued tickets', function (): void {

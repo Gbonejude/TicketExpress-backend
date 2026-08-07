@@ -49,9 +49,14 @@ final class CatalogueCache
      * Key for this exact request.
      *
      * The whole query string is part of it — a filtered list is a different
-     * result — and so is whether the caller is authenticated: `GET /events`
-     * hides deactivated organizers from anonymous visitors only, and serving a
-     * back-office user's cached page to the public would leak those events.
+     * result — and so is the audience: the public catalogue hides past events
+     * and deactivated organizers, the back-office sees everything. Serving one
+     * the other's cached page leaks exactly what the filter was for.
+     *
+     * Le découpage était « guest / auth », ce qui rangeait un participant avec
+     * l'administration : dès que le catalogue public s'est mis à masquer les
+     * événements passés, un participant connecté pouvait recevoir la page mise
+     * en cache pour un administrateur, et les voir malgré tout.
      */
     private static function key(string $prefix, Request $request): string
     {
@@ -64,7 +69,7 @@ final class CatalogueCache
             'catalogue:v%d:%s:%s:%s',
             self::version(),
             $prefix,
-            $request->user() === null ? 'guest' : 'auth',
+            CatalogueAudience::cacheSegment($request),
             md5(json_encode($query, JSON_THROW_ON_ERROR)),
         );
     }

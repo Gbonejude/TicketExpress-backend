@@ -15,6 +15,7 @@ use App\Http\Controllers\Controller;
 use App\Models\OrderItem;
 use App\Models\Ticket;
 use App\Models\TicketType;
+use App\Support\CatalogueAudience;
 use App\Support\CatalogueCache;
 use App\Support\Commission;
 use App\Http\Requests\V1\Event\StoreEventRequest;
@@ -109,12 +110,21 @@ final class EventController extends Controller
             ->with(['category', 'venue', 'organizer', 'ticketTypes'])
             ->withCount(['ticketTypes', 'favoritedBy']);
 
-        // Client side (unauthenticated): hide events of deactivated organizers.
-        // Back-office users still see everything.
-        if ($request->user() === null) {
+        // Côté public — visiteur *et* participant connecté : on ne montre que ce
+        // qui est encore à venir, et seulement des organisateurs actifs. Le
+        // back-office voit tout : un organisateur doit pouvoir revenir sur ses
+        // événements passés, et les rapports agrègent dessus.
+        //
+        // Le test portait sur « anonyme » et non sur « public », ce qui laissait
+        // un participant connecté voir les événements d'un organisateur
+        // désactivé — alors que la désactivation existe précisément pour les
+        // retirer du côté client.
+        if (! CatalogueAudience::requestSeesEverything($request)) {
             $query->whereHas('organizer', function (Builder $q): void {
                 $q->where('is_active', true);
             });
+
+            $this->hidePastEvents($query);
         }
 
         if ($request->filled('status')) {
@@ -224,6 +234,50 @@ final class EventController extends Controller
     }
 
     /**
+     * Un événement que le côté public ne doit pas rendre, même par son URL.
+     *
+     * Les deux mêmes conditions que la liste, écrites en PHP parce qu'ici
+     * l'événement est déjà chargé. Elles doivent rester alignées : un événement
+     * absent de la liste mais servi par son lien direct, c'est le lien qu'on
+     * partage sur WhatsApp qui contourne la règle.
+     */
+    private function isHiddenFromPublic(Event $event): bool
+    {
+        // La date est déjà sur le modèle, donc gratuite : on la teste d'abord et
+        // on sort avant de toucher la base. L'organisateur, lui, coûte une
+        // lecture par clé primaire, et seulement pour un événement encore à
+        // venir consulté par le public.
+        if ($event->end_date !== null && $event->end_date->isPast()) {
+            return true;
+        }
+
+        $event->loadMissing('organizer');
+
+        return $event->organizer?->is_active === false;
+    }
+
+    /**
+     * Ne garde que les événements qui ne sont pas terminés.
+     *
+     * La borne est la date de **fin**, jamais celle de début : un festival
+     * commencé hier et qui court trois jours est encore à venir pour un
+     * acheteur, et le retirer du catalogue au premier soir couperait la vente en
+     * pleine exploitation.
+     *
+     * Un événement sans date de fin est conservé : l'absence de date n'est pas
+     * une preuve qu'il est passé, et le faire disparaître serait un effet de
+     * bord silencieux d'une donnée manquante.
+     *
+     * @param  Builder<Event>  $query
+     */
+    private function hidePastEvents(Builder $query): void
+    {
+        $query->where(function (Builder $q): void {
+            $q->where('end_date', '>=', now())->orWhereNull('end_date');
+        });
+    }
+
+    /**
      * Order the catalogue.
      *
      * Sorting by price orders on the cheapest ticket type of each event, which
@@ -313,6 +367,17 @@ final class EventController extends Controller
      */
     public function show(Request $request, Event $id): JsonResponse
     {
+        // Une URL n'est pas une autorisation. Le côté public ne montre pas les
+        // événements terminés, et cette page était la porte de service : le lien
+        // d'un concert de l'an dernier continuait de rendre l'affiche, les
+        // tarifs et le bouton de réservation.
+        //
+        // 404 et non 403 : « cet événement n'est pas visible ici » n'a pas à
+        // révéler qu'il existe. Le back-office, lui, passe.
+        if (! CatalogueAudience::requestSeesEverything($request) && $this->isHiddenFromPublic($id)) {
+            abort(404);
+        }
+
         // Cached like the listing, and for the same short window: an event page
         // is the most-hit URL on the site once a link circulates, and its five
         // eager-loaded relations make it the most expensive to build. 60s keeps

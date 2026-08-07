@@ -13,7 +13,9 @@ use App\Http\Requests\V1\EventOccurrence\UpdateEventOccurrenceRequest;
 use App\Http\Resources\V1\EventOccurrenceResource;
 use App\Models\Event;
 use App\Models\EventOccurrence;
+use App\Support\CatalogueAudience;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -49,8 +51,16 @@ final class EventOccurrenceController extends Controller
      *   ]
      * }
      */
-    public function index(Event $event): AnonymousResourceCollection
+    public function index(Request $request, Event $event): AnonymousResourceCollection
     {
+        // Même règle que la fiche de l'événement : le côté public ne voit rien
+        // d'un événement terminé, ses dates de représentation comprises.
+        if (! CatalogueAudience::requestSeesEverything($request)
+            && $event->end_date !== null
+            && $event->end_date->isPast()) {
+            abort(404);
+        }
+
         $occurrences = $event->occurrences()
             ->with('ticketTypes')
             ->orderBy('start_date')
