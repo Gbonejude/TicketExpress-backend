@@ -11,7 +11,7 @@ use App\Models\CheckIn;
 use App\Models\Event;
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
+use App\Support\CheckInWindow;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -21,9 +21,9 @@ use Illuminate\Support\Facades\DB;
  * une exception, cette action part du **code lu** (numéro ou QR) et renvoie un
  * résultat qualifié. C'est ce que demande un contrôle d'accès : la personne au
  * portique doit savoir *pourquoi* elle refuse — billet inconnu, billet d'un autre
- * événement, déjà passé (et quand), remboursé — et pas seulement que « ça n'a pas
- * marché ». Le code appelant traduit chaque cas, l'action ne décide pas de
- * l'affichage.
+ * événement, présenté hors des heures d'ouverture du portique, déjà passé (et
+ * quand), remboursé — et pas seulement que « ça n'a pas marché ». Le code
+ * appelant traduit chaque cas, l'action ne décide pas de l'affichage.
  *
  * Chaque validation laisse une ligne dans `check_ins` : la table et son modèle
  * existaient déjà mais rien ne les alimentait, donc l'historique d'entrée d'un
@@ -41,6 +41,8 @@ final class ValidateEventTicketAction implements Action
     public const RESULT_ALREADY_USED = 'already_used';
 
     public const RESULT_NOT_VALID = 'not_valid';
+
+    public const RESULT_OUTSIDE_WINDOW = 'outside_window';
 
     /**
      * @param  array{event: Event, code: string, agent: User, device?: string|null}  $data
@@ -65,6 +67,23 @@ final class ValidateEventTicketAction implements Action
                 'message' => $ticketEvent === null
                     ? 'Ce billet n\'est rattaché à aucun événement.'
                     : sprintf('Ce billet est celui de « %s », pas de cet événement.', $ticketEvent->title),
+                'ticket' => $ticket,
+                'foundEvent' => $ticketEvent,
+            ];
+        }
+
+        // Avant l'identité du billet, l'heure : un billet parfaitement valide ne
+        // s'échange contre une entrée que pendant sa fenêtre. Celle de sa
+        // *séance* quand il en vise une — sans quoi, sur un événement du 7 et du
+        // 9, le billet du 9 passerait le 7. Placé ici, après le rattachement à
+        // l'événement, pour que le message parle du bon événement — et avant
+        // toute consommation.
+        $closedReason = CheckInWindow::refusalReasonForTicket($ticket);
+
+        if ($closedReason !== null) {
+            return [
+                'result' => self::RESULT_OUTSIDE_WINDOW,
+                'message' => $closedReason,
                 'ticket' => $ticket,
                 'foundEvent' => $ticketEvent,
             ];
@@ -139,7 +158,9 @@ final class ValidateEventTicketAction implements Action
     private function findByCode(string $code): ?Ticket
     {
         return Ticket::query()
-            ->with(['ticketType.event', 'order', 'checkedInBy'])
+            // `ticketType.occurrence` : la séance visée par le billet, dont
+            // dépend la fenêtre de validation.
+            ->with(['ticketType.event', 'ticketType.occurrence', 'order', 'checkedInBy'])
             ->where('qr_code', $code)
             ->first();
     }

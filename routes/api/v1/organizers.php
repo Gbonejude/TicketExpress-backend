@@ -5,6 +5,16 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\OrganizerController;
 use Illuminate\Support\Facades\Route;
 
+// Sa propre fiche. Déclarée avant `organizers/{id}` — la contrainte `whereUlid`
+// suffirait à éviter la collision, mais l'ordre rend l'intention lisible.
+// Ouverte à tout compte authentifié : le contrôleur répond 404 à qui n'a pas de
+// profil organisateur, et ne laisse modifier que la fenêtre de contrôle
+// d'accès. L'écran d'administration reste réservé à `screen.organizers`.
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('organizers/me', [OrganizerController::class, 'showMine'])->name('organizers.me.show');
+    Route::put('organizers/me', [OrganizerController::class, 'updateMine'])->name('organizers.me.update');
+});
+
 // Public organizer listing and details
 Route::get('organizers', [OrganizerController::class, 'index'])->name('organizers.index');
 Route::get('organizers/{id}', [OrganizerController::class, 'show'])->whereUlid('id')->name('organizers.show');

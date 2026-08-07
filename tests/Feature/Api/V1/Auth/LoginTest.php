@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Organizer;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -118,4 +119,31 @@ it('still lets the back-office log in through admin/login', function () use ($cr
     $this->postJson('/api/v1/auth/admin/login', $credentials)
         ->assertSuccessful()
         ->assertJsonStructure(['data' => ['accessToken', 'userData', 'userAbilityRules']]);
+});
+
+it('tells the back-office which organizer just logged in', function () use ($credentials, $makeClient) {
+    // Le dashboard s'en sert pour ne pas faire choisir à un organisateur, dans
+    // une liste déroulante, ce qu'il est déjà — et pour lire ses marges de
+    // contrôle d'accès par défaut sans requête supplémentaire.
+    $user = $makeClient();
+
+    $organizer = Organizer::factory()->create([
+        'user_id' => $user->id,
+        'checkin_open_hours_before' => 6,
+    ]);
+
+    $this->postJson('/api/v1/auth/admin/login', $credentials)
+        ->assertSuccessful()
+        ->assertJsonPath('data.userData.organizer.id', $organizer->id)
+        // 6 et non 6.0 : l'encodage JSON laisse tomber la décimale nulle, et
+        // c'est bien « 6 h » que le formulaire affichera.
+        ->assertJsonPath('data.userData.organizer.checkinOpenHoursBefore', 6);
+});
+
+it('leaves the organizer null for an administrator', function () use ($credentials, $makeClient) {
+    $makeClient();
+
+    $this->postJson('/api/v1/auth/admin/login', $credentials)
+        ->assertSuccessful()
+        ->assertJsonPath('data.userData.organizer', null);
 });

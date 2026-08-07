@@ -247,7 +247,12 @@ final class AuthController extends Controller
 
         return $this->success([
             'accessToken' => $token,
-            'userData' => new UserResource($user),
+
+            // L'organisateur voyage avec le compte : le back-office en a besoin
+            // pour savoir *qui* est connecté, et lui éviter de se choisir
+            // lui-même dans une liste déroulante à chaque création d'événement.
+            // Null pour un administrateur, qui n'en est pas un.
+            'userData' => new UserResource($user->load('organizer')),
             'userAbilityRules' => AbilityRules::for($user),
         ], 'Login successful.');
     }

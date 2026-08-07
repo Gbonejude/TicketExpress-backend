@@ -39,6 +39,76 @@ final class OrganizerController extends Controller
      *
      * @apiResourceModel \App\Models\Organizer
      */
+    /**
+     * My organizer profile
+     *
+     * La fiche de l'organisateur connecté. Distincte de `organizers/{id}` :
+     * celle-là est réservée à l'administration, alors qu'un organisateur doit
+     * pouvoir consulter la sienne sans avoir accès à l'écran de gestion.
+     *
+     * @authenticated
+     *
+     * @response 404 scenario="Compte sans profil organisateur" {
+     *   "success": false,
+     *   "message": "Aucun profil organisateur n'est rattaché à ce compte."
+     * }
+     */
+    public function showMine(Request $request): JsonResponse
+    {
+        $organizer = $request->user()?->organizer;
+
+        if ($organizer === null) {
+            return $this->error(
+                message: 'Aucun profil organisateur n\'est rattaché à ce compte.',
+                status: 404,
+            );
+        }
+
+        return $this->success(new OrganizerResource($organizer));
+    }
+
+    /**
+     * Update my check-in window
+     *
+     * Les heures d'ouverture et de fermeture du contrôle d'accès appliquées par
+     * défaut à tous ses événements.
+     *
+     * Volontairement limité à ces deux champs : le nom, le logo et surtout le
+     * *statut* d'un organisateur relèvent de l'administration, et les exposer
+     * ici laisserait un organisateur s'approuver lui-même.
+     *
+     * @authenticated
+     *
+     * @bodyParam checkin_open_hours_before number Hours before an event starts when check-in opens; null to fall back on the factory value. Example: 6
+     * @bodyParam checkin_close_hours_after number Hours after an event ends when check-in closes. Example: 4
+     */
+    public function updateMine(Request $request): JsonResponse
+    {
+        $organizer = $request->user()?->organizer;
+
+        if ($organizer === null) {
+            return $this->error(
+                message: 'Aucun profil organisateur n\'est rattaché à ce compte.',
+                status: 404,
+            );
+        }
+
+        $validated = $request->validate([
+            'checkin_open_hours_before' => ['present', 'nullable', 'numeric', 'min:0', 'max:168'],
+            'checkin_close_hours_after' => ['present', 'nullable', 'numeric', 'min:0', 'max:168'],
+        ], [
+            'checkin_open_hours_before.max' => 'L\'ouverture anticipée ne peut pas dépasser 168 heures (7 jours).',
+            'checkin_close_hours_after.max' => 'La tolérance après la fin ne peut pas dépasser 168 heures (7 jours).',
+        ]);
+
+        $organizer->update($validated);
+
+        return $this->success(
+            new OrganizerResource($organizer->fresh()),
+            'Contrôle d\'accès mis à jour.',
+        );
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Organizer::query()

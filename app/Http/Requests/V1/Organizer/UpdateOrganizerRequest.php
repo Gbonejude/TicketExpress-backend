@@ -28,6 +28,10 @@ final class UpdateOrganizerRequest extends FormRequest
             'logo' => ['nullable', 'image', 'max:2048'],
             'website' => ['nullable', 'url', 'max:255'],
             'status' => ['sometimes', 'string', Rule::enum(OrganizerStatus::class)],
+
+            // `null` remet l'organisateur sur la valeur d'usine.
+            'checkin_open_hours_before' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:168'],
+            'checkin_close_hours_after' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:168'],
         ];
     }
 

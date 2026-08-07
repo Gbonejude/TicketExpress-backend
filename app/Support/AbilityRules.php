@@ -22,17 +22,38 @@ use App\Models\User;
 final class AbilityRules
 {
     /**
-     * @return array<int, array{action: string, subject: string}>
+     * @return array<int, array{action: string, subject: string, inverted?: bool}>
      */
     public static function for(User $user): array
     {
         if ($user->hasRole('super-admin')) {
-            return [['action' => 'manage', 'subject' => 'all']];
+            $rules = [['action' => 'manage', 'subject' => 'all']];
+
+            // `manage all` couvrirait aussi la fiche d'organisateur, alors que
+            // le super-admin n'en a pas : l'écran « Contrôle d'accès » lui
+            // afficherait un formulaire sans objet, et l'API lui répondrait 404.
+            // CASL retient la dernière règle applicable, donc une règle inversée
+            // posée après suffit à la lui retirer — sans toucher au reste de ses
+            // droits, et sans la lui retirer s'il organise lui-même.
+            if ($user->organizer === null) {
+                $rules[] = ['action' => 'read', 'subject' => 'organizer-profile', 'inverted' => true];
+            }
+
+            return $rules;
         }
 
         $rules = [
             ['action' => 'read', 'subject' => 'Auth'],
         ];
+
+        // Sa propre fiche d'organisateur — notamment les heures d'ouverture du
+        // contrôle d'accès, qui lui appartiennent. Ce n'est pas un écran
+        // d'administration : il n'y a rien à y voir pour qui n'organise pas,
+        // d'où une règle conditionnée à l'existence du profil plutôt qu'à une
+        // permission `screen.*`.
+        if ($user->organizer !== null) {
+            $rules[] = ['action' => 'read', 'subject' => 'organizer-profile'];
+        }
 
         foreach (Screen::cases() as $screen) {
             if (! $user->can($screen->permission())) {

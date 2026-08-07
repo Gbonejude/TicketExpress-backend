@@ -33,6 +33,12 @@ final class OrganizerResource extends JsonResource
             'statusLabel' => $this->status->label(),
             'isActive' => (bool) $this->is_active,
             'rejectionReason' => $this->rejection_reason,
+
+            // Marges de contrôle d'accès appliquées par défaut à ses
+            // événements. `null` = valeur d'usine ; le formulaire doit pouvoir
+            // afficher ce vide plutôt qu'un zéro.
+            'checkinOpenHoursBefore' => $this->checkin_open_hours_before,
+            'checkinCloseHoursAfter' => $this->checkin_close_hours_after,
             'user' => new UserResource($this->whenLoaded('user')),
             'eventsCount' => $this->whenCounted('events'),
             'createdAt' => new DateTimeResource(

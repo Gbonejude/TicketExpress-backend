@@ -42,6 +42,8 @@ final class Organizer extends Model implements HasMedia
         'status',
         'rejection_reason',
         'is_active',
+        'checkin_open_hours_before',
+        'checkin_close_hours_after',
     ];
 
     protected $with = [
@@ -184,6 +186,11 @@ final class Organizer extends Model implements HasMedia
         return [
             'status' => OrganizerStatus::class,
             'is_active' => 'boolean',
+
+            // `null` (« je n'ai rien dit ») se distingue de `0` (« pas une
+            // minute avant l'heure ») : le cast primitif laisse null intact.
+            'checkin_open_hours_before' => 'float',
+            'checkin_close_hours_after' => 'float',
         ];
     }
 }

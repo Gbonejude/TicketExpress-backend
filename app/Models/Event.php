@@ -43,6 +43,8 @@ final class Event extends Model implements HasMedia
         'online_url',
         'refund_allowed',
         'refund_days_before',
+        'checkin_open_hours_before',
+        'checkin_close_hours_after',
     ];
 
     protected $with = [
@@ -181,6 +183,13 @@ final class Event extends Model implements HasMedia
             'max_attendees' => 'integer',
             'refund_allowed' => 'boolean',
             'refund_days_before' => 'integer',
+
+            // `null` se distingue de `0` : le premier veut dire « hérite du
+            // réglage plateforme », le second « n'ouvre pas une minute avant
+            // l'heure ». Le cast primitif laisse null intact, c'est ce qu'on
+            // veut ici.
+            'checkin_open_hours_before' => 'float',
+            'checkin_close_hours_after' => 'float',
         ];
     }
 }

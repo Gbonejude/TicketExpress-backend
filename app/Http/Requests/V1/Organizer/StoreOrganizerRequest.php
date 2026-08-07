@@ -29,6 +29,12 @@ final class StoreOrganizerRequest extends FormRequest
             'logo' => ['nullable', 'image', 'max:2048'],
             'website' => ['nullable', 'url', 'max:255'],
             'status' => ['nullable', 'string', Rule::enum(OrganizerStatus::class)],
+
+            // Marges de contrôle d'accès appliquées par défaut à ses
+            // événements. Plafonnées à une semaine : au-delà, la fenêtre ne
+            // borne plus rien.
+            'checkin_open_hours_before' => ['nullable', 'numeric', 'min:0', 'max:168'],
+            'checkin_close_hours_after' => ['nullable', 'numeric', 'min:0', 'max:168'],
         ];
     }
 
