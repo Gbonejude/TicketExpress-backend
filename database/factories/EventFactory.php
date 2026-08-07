@@ -73,4 +73,21 @@ final class EventFactory extends Factory
             'end_date' => $this->faker->dateTimeBetween('-1 week', '-1 day'),
         ]);
     }
+
+    /**
+     * Un événement qui se déroule maintenant : commencé, pas encore terminé.
+     *
+     * L'état par défaut place l'événement dans plusieurs semaines, hors de la
+     * fenêtre de contrôle d'accès (voir le support CheckInWindow). Tout test
+     * qui valide un billet en a besoin, sans quoi il se heurte à un refus
+     * « trop tôt » sans rapport avec ce qu'il cherche à vérifier.
+     */
+    public function ongoing(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => EventStatus::PUBLISHED,
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addHours(2),
+        ]);
+    }
 }

@@ -12,6 +12,7 @@ use App\Models\CheckIn;
 use App\Models\Event;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\CheckInWindow;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -52,6 +53,11 @@ final class EventCheckInController extends Controller
      *   "success": false,
      *   "message": "Billet déjà validé le 12/08/2026 à 19:42 par Admin TicketExpress.",
      *   "errors": {"result": "already_used", "ticket": {"ticketNumber": "TKT-2026-0001"}}
+     * }
+     * @response 422 scenario="Portique fermé" {
+     *   "success": false,
+     *   "message": "Trop tôt : le contrôle d'accès de « Afro Vibes » ouvre le 12/08/2026 à 16:00.",
+     *   "errors": {"result": "outside_window", "ticket": {"ticketNumber": "TKT-2026-0001"}}
      * }
      */
     public function store(Request $request, string $eventId): JsonResponse
@@ -146,6 +152,10 @@ final class EventCheckInController extends Controller
 
         return $this->success([
             'eventId' => $event->id,
+            // L'état du portique voyage avec l'historique : le panneau le charge
+            // déjà à l'ouverture, et l'agent voit « fermé jusqu'à 18:00 » avant
+            // de scanner plutôt qu'après le premier refus.
+            'window' => CheckInWindow::state($event),
             'checkIns' => $checkIns,
         ]);
     }

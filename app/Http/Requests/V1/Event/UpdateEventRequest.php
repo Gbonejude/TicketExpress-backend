@@ -45,6 +45,11 @@ final class UpdateEventRequest extends FormRequest
             'online_url' => ['nullable', 'url', 'max:2048', 'required_if:event_type,online'],
             'refund_allowed' => ['sometimes', 'boolean'],
             'refund_days_before' => ['sometimes', 'integer', 'min:0', 'max:365'],
+
+            // Marges de contrôle d'accès propres à l'événement. `null` remet
+            // l'événement sur les réglages de la plateforme.
+            'checkin_open_hours_before' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:168'],
+            'checkin_close_hours_after' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:168'],
         ];
     }
 

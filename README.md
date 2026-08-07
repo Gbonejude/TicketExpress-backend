@@ -18,6 +18,7 @@
 - [Testing](#testing)
 - [Database](#database)
 - [Queue Workers](#queue-workers)
+- [Scheduled Tasks](#scheduled-tasks)
 - [Monitoring](#monitoring)
 - [Project Structure](#project-structure)
 - [Development Guidelines](#development-guidelines)
@@ -288,6 +289,80 @@ php artisan queue:work --queue=emails,notifications,default
 - `SendEmailJob` - Handles all email sending
 - Event listeners automatically queue notifications
 - Background processing for heavy operations
+
+---
+
+## ⏰ Scheduled Tasks
+
+Scheduled commands are declared in `App\Bootstrappers\ScheduleBootstrapper`
+(wired from `bootstrap/app.php`).
+
+**Development**
+```bash
+php artisan schedule:work
+```
+
+**Production** — one cron entry, running every minute:
+```cron
+* * * * * cd /path/to/TicketExpress-backend && php artisan schedule:run >> /dev/null 2>&1
+```
+
+### `tickets:expire` (hourly)
+
+Marks as `expired` every `valid`, never-scanned ticket whose event's check-in
+window has closed. Without it, a ticket for a finished event keeps showing as
+"Valide" in the back office and in the holder's account.
+
+```bash
+php artisan tickets:expire --dry-run   # count only, change nothing
+php artisan tickets:expire
+```
+
+Tickets that were actually used, refunded or cancelled are left untouched —
+those statuses carry a decision the expiry must not overwrite.
+
+### Check-in window
+
+A ticket can only be validated between `checkin_open_hours_before` before its
+event starts and `checkin_close_hours_after` after it ends. Outside that window
+the gate refuses the ticket **without consuming it**.
+
+The margins belong to the organizer, never to the platform: they are the ones
+holding the gate. They are resolved in three tiers, most specific first:
+
+1. **the event** — `events.checkin_open_hours_before` /
+   `checkin_close_hours_after`, filled in at creation only when *this* event is
+   an exception (**Événements → (modifier) → Contrôle d'accès**).
+2. **the organizer** — the same two columns on `organizers`, their usual way of
+   working, set once and followed by everything they schedule. Organizers set
+   it themselves under **Administration → Contrôle d'accès**, which talks to
+   `GET|PUT /api/v1/organizers/me` — an endpoint restricted to those two fields
+   so an organizer cannot approve themselves through it. Admins can also set it
+   from **Organisateurs → (modifier)**.
+3. **`config/ticketexpress.php`** — factory values, 4 h either side.
+
+Both sets of columns are nullable, and `null` means *inherit* — distinct from
+`0`, which means "do not open a minute early". An event that says nothing keeps
+following its organizer, including when that organizer changes their habit
+later. The super-admin does not set this anywhere.
+
+The rule lives in `App\Support\CheckInWindow` and is enforced by the gate
+(`ValidateEventTicketAction`), by manual back-office validation
+(`CheckInTicketAction`) and by `tickets:expire` alike.
+
+### Events running on several nights
+
+When a ticket type names an occurrence (`ticket_types.occurrence_id`), the
+window is computed on **that occurrence's** dates rather than on the event's.
+Without it, an event held on the 7th and the 9th has a window spanning both, so
+a ticket sold for the 9th would be accepted — and burnt — on the 7th, leaving
+its bearer turned away on the night they paid for. A ticket with no occurrence
+keeps following the event, which is the case for most of the catalogue.
+
+The margins still come from the event, then the organizer: an occurrence carries
+a date, not a way of opening the doors. The check-in panel's banner stays at
+event scope — it announces the gate, not one night; each scan's verdict is what
+decides.
 
 ---
 

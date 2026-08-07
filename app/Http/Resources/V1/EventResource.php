@@ -6,6 +6,7 @@ namespace App\Http\Resources\V1;
 
 use App\Http\Resources\DateTimeResource;
 use App\Models\Event;
+use App\Support\CheckInWindow;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -41,6 +42,18 @@ final class EventResource extends JsonResource
             'onlineUrl' => $this->online_url,
             'refundAllowed' => (bool) $this->refund_allowed,
             'refundDaysBefore' => (int) $this->refund_days_before,
+
+            // Marges propres à l'événement : `null` signifie « hérite de la
+            // plateforme », et le formulaire doit pouvoir afficher ce vide tel
+            // quel plutôt qu'un zéro qui fermerait le portique à l'heure pile.
+            'checkinOpenHoursBefore' => $this->checkin_open_hours_before,
+            'checkinCloseHoursAfter' => $this->checkin_close_hours_after,
+
+            // La fenêtre effective, marges héritées comprises — ce que le
+            // portique appliquera réellement. Sans garde de nullité :
+            // `start_date` est NOT NULL en base, et toutes les requêtes qui
+            // alimentent cette ressource chargent l'événement en entier.
+            'checkinWindow' => CheckInWindow::state($this->resource),
             'organizer' => new OrganizerResource($this->whenLoaded('organizer')),
             'category' => new EventCategoryResource($this->whenLoaded('category')),
             'venue' => new VenueResource($this->whenLoaded('venue')),

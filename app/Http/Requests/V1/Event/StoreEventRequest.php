@@ -39,6 +39,11 @@ final class StoreEventRequest extends FormRequest
             'online_url' => ['nullable', 'url', 'max:2048', 'required_if:event_type,online'],
             'refund_allowed' => ['nullable', 'boolean'],
             'refund_days_before' => ['nullable', 'integer', 'min:0', 'max:365'],
+
+            // Marges de contrôle d'accès propres à l'événement. Laissées vides,
+            // l'événement suit les réglages de la plateforme.
+            'checkin_open_hours_before' => ['nullable', 'numeric', 'min:0', 'max:168'],
+            'checkin_close_hours_after' => ['nullable', 'numeric', 'min:0', 'max:168'],
             'ticket_types' => ['nullable', 'array', 'min:1'],
             'ticket_types.*.name' => ['required_with:ticket_types', 'string', 'max:255', new NoXssRule],
             'ticket_types.*.description' => ['nullable', 'string', new NoXssRule],

@@ -30,6 +30,10 @@ final class SettingsController extends Controller
     /**
      * Update platform settings
      *
+     * Les marges de contrôle d'accès ne sont volontairement pas ici : elles
+     * appartiennent à l'organisateur, qui tient le portique, et se règlent sur
+     * sa fiche ou sur l'événement lui-même.
+     *
      * @bodyParam commission_rate number required Platform commission as a fraction (0.05 = 5%). Example: 0.05
      */
     public function update(Request $request): JsonResponse
