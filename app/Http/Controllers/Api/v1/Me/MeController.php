@@ -56,11 +56,6 @@ final class MeController extends Controller
     {
         $user = $request->user();
 
-        // The public site routes the "become an organizer" journey off this
-        // relation: no organizer → application form, pending/rejected → status
-        // screen, approved → hand over to the back-office. Without it the
-        // front-end would have to guess from the role alone, which does not
-        // carry the approval state.
         $user->loadMissing('organizer');
 
         $screens = array_values(array_filter(

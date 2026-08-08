@@ -15,6 +15,7 @@ use App\Http\Requests\V1\Organizer\StoreOrganizerRequest;
 use App\Http\Requests\V1\Organizer\UpdateOrganizerRequest;
 use App\Http\Resources\V1\OrganizerResource;
 use App\Models\Organizer;
+use App\Support\CatalogueAudience;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -123,10 +124,30 @@ final class OrganizerController extends Controller
         // sans le moindre événement, et le refus était rendu public alors qu'il
         // ne concerne que le demandeur et l'administration.
         //
-        // Le back-office, lui, continue de tout voir : c'est là qu'on approuve.
-        if ($request->user() === null) {
+        // Le back-office, lui, voit tout : c'est là qu'on approuve.
+        //
+        // Le test passait par `$request->user()`, qui répond `null` sur cette
+        // route : elle est publique, donc sans `auth:sanctum`, et le garde par
+        // défaut est `web` — le jeton d'un administrateur était lu comme anonyme.
+        // Sa liste était donc bornée aux organisateurs approuvés, et les
+        // candidatures à traiter lui étaient invisibles : l'écran d'approbation
+        // n'avait jamais rien à approuver.
+        $seesEverything = CatalogueAudience::requestSeesEverything($request);
+
+        if (! $seesEverything) {
             $query->where('status', OrganizerStatus::APPROVED)
                 ->where('is_active', true);
+        }
+
+        // Filtre par statut, réservé au back-office : c'est ce qui sépare les
+        // nouvelles demandes des dossiers déjà tranchés. Ignoré côté public, où il
+        // servirait à contourner la règle ci-dessus.
+        if ($seesEverything && $request->filled('status')) {
+            $status = OrganizerStatus::tryFrom((string) $request->input('status'));
+
+            if ($status !== null) {
+                $query->where('status', $status);
+            }
         }
 
         if ($request->filled('search')) {
