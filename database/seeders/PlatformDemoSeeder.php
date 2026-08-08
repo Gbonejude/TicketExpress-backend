@@ -58,6 +58,19 @@ final class PlatformDemoSeeder extends Seeder
     /** @var array<int, string> */
     private array $usedOrderNumbers = [];
 
+    /**
+     * Les événements dont tous les tarifs sont posés à « épuisé ».
+     *
+     * Retenus parce qu'un seul geste peut défaire ce réglage : l'annulation
+     * d'une commande impayée rend ses places au stock, et
+     * `orders:cancel-unpaid` passe chaque minute sur les commandes en attente
+     * que ce seeder vient de créer. Un événement marqué complet se retrouvait
+     * ainsi à « 1 tarif sur 2 épuisé » quelques minutes après le seeding.
+     *
+     * @var array<int, string>
+     */
+    private array $soldOutEventIds = [];
+
     private const ASSETS = __DIR__.'/assets';
 
     /**
@@ -154,9 +167,14 @@ final class PlatformDemoSeeder extends Seeder
             'tiers' => [['name' => 'Entrée', 'price' => 3000, 'quantity' => 500]]],
         ['title' => 'Les Fables de Lomé — Pièce en 3 actes', 'category' => 'theatre', 'organizer' => 2, 'venue' => 6, 'days' => 15, 'image' => 'event-theatre-rideau.webp', 'recurring' => true,
             'tiers' => [['name' => 'Placement libre', 'price' => 4000, 'quantity' => 350], ['name' => 'Première catégorie', 'price' => 9000, 'quantity' => 120]]],
-        // Complet : tous les tarifs épuisés. Sans lui, « Complet » n'existe
-        // nulle part dans la démonstration — ni sur la carte du catalogue, ni sur
-        // le bouton de la fiche, ni au refus de la caisse.
+        // Premier des trois événements complets — tous les tarifs épuisés. Sans
+        // eux, « Complet » n'existe nulle part dans la démonstration : ni sur une
+        // carte du catalogue, ni sur le bouton d'une fiche, ni au refus de la
+        // caisse. Trois, dans trois catégories différentes, pour qu'on tombe
+        // dessus en parcourant le site et pas seulement en le cherchant.
+        //
+        // Aucun n'est pris parmi les six premiers événements à venir : ce sont
+        // eux qui alimentent les commandes du participant de démonstration.
         ['title' => 'Soirée Humour — Rires du Golfe', 'category' => 'theatre', 'organizer' => 2, 'venue' => 2, 'days' => 40, 'image' => 'event-broadway.webp', 'soldout' => true,
             'tiers' => [['name' => 'Standard', 'price' => 6000, 'quantity' => 700], ['name' => 'Carré VIP', 'price' => 18000, 'quantity' => 100]]],
         // Un seul tarif épuisé : la fiche reste vendable, et la carte du tarif
@@ -173,7 +191,9 @@ final class PlatformDemoSeeder extends Seeder
             'tiers' => [['name' => 'Accès live', 'price' => 25000, 'quantity' => 200], ['name' => 'Live + replay', 'price' => 40000, 'quantity' => 150]]],
         ['title' => 'Certification Gestion de Projet', 'category' => 'formation', 'organizer' => 5, 'venue' => 5, 'days' => 48, 'image' => 'event-formation-salle.webp',
             'tiers' => [['name' => 'Participant', 'price' => 90000, 'quantity' => 80]]],
-        ['title' => 'Sommet du Numérique Togolais', 'category' => 'conference', 'organizer' => 5, 'venue' => 0, 'days' => 31, 'image' => 'event-business.webp',
+        // Deuxième complet, sur trois tarifs : la fiche montre alors une colonne
+        // entière d'« Épuisé », ce qu'un événement à deux tarifs ne rend pas.
+        ['title' => 'Sommet du Numérique Togolais', 'category' => 'conference', 'organizer' => 5, 'venue' => 0, 'days' => 31, 'image' => 'event-business.webp', 'soldout' => true,
             'tiers' => [['name' => 'Visiteur', 'price' => 10000, 'quantity' => 1200], ['name' => 'Professionnel', 'price' => 45000, 'quantity' => 300], ['name' => 'Partenaire', 'price' => 150000, 'quantity' => 40]]],
         ['title' => 'Forum Entrepreneuriat & Financement', 'category' => 'business', 'organizer' => 5, 'venue' => 4, 'days' => 57, 'image' => 'event-forum-entrepreneuriat.webp',
             'tiers' => [['name' => 'Entrée', 'price' => 15000, 'quantity' => 600], ['name' => 'Pitch session', 'price' => 60000, 'quantity' => 50]]],
@@ -181,7 +201,10 @@ final class PlatformDemoSeeder extends Seeder
             'tiers' => [['name' => 'Séance', 'price' => 2500, 'quantity' => 400], ['name' => 'Pass semaine', 'price' => 12000, 'quantity' => 150]]],
         ['title' => 'Festival des Saveurs du Togo', 'category' => 'gastronomie', 'organizer' => 1, 'venue' => 6, 'days' => 35, 'image' => 'event-gastro.webp', 'promo' => true,
             'tiers' => [['name' => 'Dégustation', 'price' => 5000, 'quantity' => 800], ['name' => 'Atelier cuisine', 'price' => 20000, 'quantity' => 100]]],
-        ['title' => 'Escapade Cascades de Kpalimé', 'category' => 'tourisme', 'organizer' => 3, 'venue' => 8, 'days' => 18, 'image' => 'event-festival.webp',
+        // Troisième complet, et le plus proche des trois (dans dix-huit jours) :
+        // il apparaît donc haut dans un catalogue trié par date, là où on le voit
+        // sans chercher.
+        ['title' => 'Escapade Cascades de Kpalimé', 'category' => 'tourisme', 'organizer' => 3, 'venue' => 8, 'days' => 18, 'image' => 'event-festival.webp', 'soldout' => true,
             'tiers' => [['name' => 'Journée', 'price' => 18000, 'quantity' => 120], ['name' => 'Week-end', 'price' => 55000, 'quantity' => 60]]],
         ['title' => 'Nuit des Sciences et de l’Innovation', 'category' => 'science', 'organizer' => 5, 'venue' => 5, 'days' => 43, 'image' => 'event-concert.webp',
             'tiers' => [['name' => 'Entrée', 'price' => 2000, 'quantity' => 1000], ['name' => 'Atelier robotique', 'price' => 8000, 'quantity' => 80]]],
@@ -515,6 +538,10 @@ final class PlatformDemoSeeder extends Seeder
         $soldOutAll = $definition['soldout'] ?? false;
         $soldOutTier = $definition['soldout_tier'] ?? null;
 
+        if ($soldOutAll) {
+            $this->soldOutEventIds[] = $event->id;
+        }
+
         // L'ouverture des ventes : huit semaines avant l'événement, mais jamais
         // dans le futur. Sur un événement à plus de deux mois, la règle des huit
         // semaines plaçait l'ouverture après aujourd'hui : treize tarifs
@@ -829,6 +856,17 @@ final class PlatformDemoSeeder extends Seeder
             random_int(1, 100) <= 50 => OrderStatus::CANCELLED,
             default => OrderStatus::REFUNDED,
         };
+
+        // Jamais de commande en attente sur un événement affiché complet.
+        //
+        // Elle sera annulée par `orders:cancel-unpaid` dans les minutes qui
+        // suivent le seeding, et l'annulation rend ses places au stock : le
+        // tarif cesse alors d'être épuisé et l'événement n'affiche plus
+        // « Complet ». Le réglage se défaisait tout seul, sans que rien dans le
+        // seeder ne soit faux au moment où il tournait.
+        if ($status === OrderStatus::PENDING && in_array($event->id, $this->soldOutEventIds, true)) {
+            $status = OrderStatus::PAID;
+        }
 
         // Une commande « en attente » ne peut plus être vieille : passé quinze
         // minutes, `orders:cancel-unpaid` l'annule et rend ses places. En la

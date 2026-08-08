@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use App\Enums\AvailabilityStatus;
+use App\Enums\OrderStatus;
 use App\Enums\OrganizerStatus;
 use App\Models\Event;
 use App\Models\EventCategory;
 use App\Models\EventOccurrence;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Organizer;
 use App\Models\Ticket;
 use App\Models\TicketType;
@@ -157,17 +159,33 @@ it('puts every visible event on sale, ongoing ones included', function (): void 
     expect($blocked)->toBeEmpty();
 });
 
-it('leaves one event completely sold out, and one tier of another', function (): void {
+it('leaves at least three events completely sold out, and one tier of another', function (): void {
     // Le tirage aléatoire des ventes ne monte jamais à 100 %, donc « Complet »
     // n'apparaissait nulle part : ni sur une carte du catalogue, ni sur le bouton
-    // d'une fiche, ni au refus de la caisse. Les deux cas sont posés à la main.
+    // d'une fiche, ni au refus de la caisse. Les cas sont posés à la main.
+    //
+    // Trois, et dans trois catégories différentes : un seul événement complet se
+    // trouve en le cherchant, pas en parcourant le site.
     $fullyBooked = Event::query()
         ->with('ticketTypes')
         ->get()
         ->filter(fn (Event $event) => $event->ticketTypes->isNotEmpty()
             && $event->ticketTypes->every(fn (TicketType $tier) => $tier->remainingTickets() === 0));
 
-    expect($fullyBooked)->not->toBeEmpty();
+    expect($fullyBooked)->toHaveCount(3)
+        ->and($fullyBooked->pluck('category_id')->unique())->toHaveCount(3);
+
+    // Et aucune commande en attente ne retient de places sur eux : elle serait
+    // annulée par `orders:cancel-unpaid` dans les minutes suivant le seeding, et
+    // l'annulation rendrait ces places au stock — l'événement cesserait d'être
+    // complet tout seul. Le planificateur ne tourne pas pendant les tests, donc
+    // c'est cette condition-là qu'il faut vérifier, et non le compte final.
+    $heldByPending = OrderItem::query()
+        ->whereHas('order', fn ($q) => $q->where('status', OrderStatus::PENDING->value))
+        ->whereHas('ticketType', fn ($q) => $q->whereIn('event_id', $fullyBooked->pluck('id')))
+        ->count();
+
+    expect($heldByPending)->toBe(0);
 
     $partiallyBooked = Event::query()
         ->with('ticketTypes')
