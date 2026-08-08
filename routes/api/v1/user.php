@@ -14,9 +14,12 @@ use Illuminate\Support\Facades\Route;
  * `role: super-admin` : `UpdateUserAction` applique ce champ, et rien ne
  * vérifiait qui le demandait.
  *
- * Le garde est celui de tous les autres écrans d'administration, et le même que
- * `participants` : l'écran des utilisateurs, ou le rôle qui passe outre.
  * Corriger ses propres informations ne passe plus par ici — c'est `me`.
+ *
+ * Chaque geste porte sa propre permission, et non le seul accès à l'écran :
+ * `users.create`, `users.update`, `users.delete` existent depuis toujours et
+ * pilotent déjà l'affichage des boutons du back-office. Sans elles ici, cacher
+ * « Ajouter un utilisateur » n'aurait fermé que le bouton, pas la route.
  */
 
 /*
@@ -35,8 +38,17 @@ Route::middleware(['auth:sanctum', 'role_or_permission:super-admin|screen.users'
     ->prefix('users')
     ->name('users.')
     ->group(function (): void {
-        Route::post('', [UserController::class, 'store'])->name('store');
         Route::get('{id}', [UserController::class, 'show'])->name('show');
-        Route::put('{id}', [UserController::class, 'update'])->name('update');
-        Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
+
+        Route::post('', [UserController::class, 'store'])
+            ->middleware('role_or_permission:super-admin|users.create')
+            ->name('store');
+
+        Route::put('{id}', [UserController::class, 'update'])
+            ->middleware('role_or_permission:super-admin|users.update')
+            ->name('update');
+
+        Route::delete('{id}', [UserController::class, 'destroy'])
+            ->middleware('role_or_permission:super-admin|users.delete')
+            ->name('destroy');
     });

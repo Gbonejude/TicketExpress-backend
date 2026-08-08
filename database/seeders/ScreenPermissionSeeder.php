@@ -53,7 +53,14 @@ final class ScreenPermissionSeeder extends Seeder
                 'label' => 'Administration',
             ])->save();
 
-            $admin->syncPermissions($this->permissionsFor(Screen::defaultAdminScreens()));
+            // L'administration corrige et supprime des comptes, elle n'en crée
+            // pas : créer un compte, c'est lui attribuer un rôle, et c'est le
+            // seul geste qui permette de fabriquer un autre administrateur.
+            // Réservé au super-admin, comme l'écran des administrateurs.
+            $admin->syncPermissions(array_values(array_diff(
+                $this->permissionsFor(Screen::defaultAdminScreens()),
+                [Screen::USERS->value.'.create'],
+            )));
         }
 
         // 4. organizer-manager — back-office, only their own event/box-office
