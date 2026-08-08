@@ -68,9 +68,11 @@ it('refuses to let an ordinary account create or delete a user', function (): vo
 
 it('still lets the users screen do its work', function (): void {
     // Le garde ne doit pas fermer l'écran qu'il protège : un rôle porteur de
-    // `screen.users`, sans être super-admin, continue d'administrer les comptes.
+    // `screen.users` et de la permission du geste continue d'administrer les
+    // comptes sans être super-admin.
     $role = Role::findOrCreate('admin');
     $role->givePermissionTo(Permission::findOrCreate('screen.users'));
+    $role->givePermissionTo(Permission::findOrCreate('users.update'));
 
     $admin = User::factory()->create();
     $admin->assignRole('admin');
@@ -82,6 +84,40 @@ it('still lets the users screen do its work', function (): void {
         ->assertOk();
 
     expect($target->fresh()->first_name)->toBe('Nouveau');
+});
+
+it('refuses the creation to an administration that may modify and delete', function (): void {
+    // La règle posée par le seeder : l'administration corrige et supprime des
+    // comptes, elle n'en crée pas. Le bouton disparaît côté back-office parce
+    // que la permission manque ; la route doit refuser pour la même raison,
+    // sans quoi seul le bouton serait fermé.
+    $role = Role::findOrCreate('admin');
+    $role->givePermissionTo(Permission::findOrCreate('screen.users'));
+    $role->givePermissionTo(Permission::findOrCreate('users.update'));
+    $role->givePermissionTo(Permission::findOrCreate('users.delete'));
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->postJson('/api/v1/users', [
+            'first_name' => 'Komi',
+            'last_name' => 'CREPPY',
+            'email' => 'komi@example.com',
+            'phone' => '90112233',
+        ])
+        ->assertForbidden();
+
+    // Les deux autres gestes lui restent ouverts.
+    $this->actingAs($admin)
+        ->putJson("/api/v1/users/{$target->id}", ['first_name' => 'Nouveau'])
+        ->assertOk();
+
+    $this->actingAs($admin)
+        ->deleteJson("/api/v1/users/{$target->id}")
+        ->assertNoContent();
 });
 
 it('lets the organizers screen read the list, but not touch it', function (): void {
