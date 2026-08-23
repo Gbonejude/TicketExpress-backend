@@ -28,8 +28,8 @@ Homestead.yaml
 Thumbs.db
 
 # Modelling sources (draw.io, PlantUML, PowerAMC, Visual Paradigm).
-# Editable design artefacts kept outside the repository; export the rendered
-# images into docs/ if a diagram needs to be versioned alongside the code.
+# Editable design artefacts kept outside the repository, like the diagrams
+# they export into docs/ — see the /docs/ rule below.
 *.drawio
 *.dio
 *.puml
@@ -38,3 +38,7 @@ Thumbs.db
 *.xmi
 *.mpd
 *.bpd
+
+# Documentation de rédaction et diagrammes exportés (Gantt, cas d'utilisation).
+# Accompagnent le mémoire, pas le code ; les fichiers déjà suivis le restent.
+/docs/
