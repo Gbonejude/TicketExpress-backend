@@ -22,7 +22,7 @@ return new class extends Migration
             $table->dateTime('start_date');
             $table->dateTime('end_date');
             $table->integer('max_attendees')->nullable();
-            $table->string('status')->default('draft'); // draft, published, cancelled, finished
+            $table->string('status')->default('draft');
 
             $table->string('event_type')->default('physical');
             $table->string('online_url')->nullable();

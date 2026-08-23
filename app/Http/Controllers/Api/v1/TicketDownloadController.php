@@ -87,8 +87,18 @@ final class TicketDownloadController extends Controller
             abort(429, 'Limite de téléchargements atteinte.');
         }
 
-        // Load order with relations
-        $order = $link->order->load(['tickets.ticketType.event', 'user']);
+        // Tout ce que le document lit, chargé d'avance : le reçu détaille les
+        // lignes de commande et le paiement, chaque billet nomme son lieu, son
+        // organisateur et sa séance. Sans ces relations, une commande de six
+        // billets déclenchait une trentaine de requêtes pendant le rendu.
+        $order = $link->order->load([
+            'tickets.ticketType.event.venue',
+            'tickets.ticketType.event.organizer',
+            'tickets.ticketType.occurrence',
+            'items.ticketType.event',
+            'payments',
+            'user',
+        ]);
 
         // Generate PDF on-the-fly
         $pdf = Pdf::loadView('pdfs.ticket', ['order' => $order]);
