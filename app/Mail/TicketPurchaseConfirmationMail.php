@@ -62,13 +62,27 @@ final class TicketPurchaseConfirmationMail extends Mailable implements ShouldQue
      */
     public function attachments(): array
     {
-        // Générer le PDF du ticket
+        // Les mêmes relations que le téléchargement (TicketDownloadController) :
+        // le document est le même, et il lit le lieu, l'organisateur, la séance,
+        // les lignes de commande et le paiement.
         $pdf = Pdf::loadView('pdfs.ticket', [
-            'order' => $this->order->load(['tickets.ticketType.event', 'user']),
+            'order' => $this->order->load([
+                'tickets.ticketType.event.venue',
+                'tickets.ticketType.event.organizer',
+                'tickets.ticketType.occurrence',
+                'items.ticketType.event',
+                'payments',
+                'user',
+            ]),
         ]);
 
+        // Le numéro de commande, pas l'identifiant : c'est la référence que le
+        // client voit partout ailleurs, et un ULID ne se lit pas dans une boîte
+        // mail.
+        $reference = $this->order->order_number ?: $this->order->id;
+
         return [
-            Attachment::fromData(fn () => $pdf->output(), "ticket-{$this->order->id}.pdf")
+            Attachment::fromData(fn () => $pdf->output(), "ticket-{$reference}.pdf")
                 ->withMime('application/pdf'),
         ];
     }

@@ -19,13 +19,13 @@ return new class extends Migration
             $table->string('attendee_email');
             $table->string('qr_code')->unique();
             $table->string('ticket_number')->unique();
-            $table->string('status')->default('valid'); // valid, used, cancelled
+            $table->string('status')->default('valid');
             $table->text('refund_reason')->nullable();
             $table->timestamp('refunded_at')->nullable();
             $table->dateTime('checked_in_at')->nullable();
-            $table->string('checked_in_by')->nullable()->comment('ID de l\'utilisateur qui a scanné le ticket');
-            $table->string('access_method')->default('physical')->comment('physical (sur place) ou online (en ligne)');
-            $table->text('online_access_link')->nullable()->comment('Lien pour événements en ligne');
+            $table->string('checked_in_by')->nullable();
+            $table->string('access_method')->default('physical');
+            $table->text('online_access_link')->nullable();
             $table->timestamps();
 
             $table->index('order_id');

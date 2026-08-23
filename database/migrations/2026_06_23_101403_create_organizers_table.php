@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('company_name');
             $table->text('description')->nullable();
             $table->string('website')->nullable();
-            $table->string('status')->default('pending'); // pending, approved, rejected
+            $table->string('status')->default('pending');
 
             $table->boolean('is_active')->default(true);
 
