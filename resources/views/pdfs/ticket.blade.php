@@ -13,16 +13,22 @@
      *  - ni flex ni grid : les colonnes sont des `<table>` ;
      *  - pas de variables CSS : les couleurs de la marque sont écrites en dur,
      *    reprises du `tokens.css` du site public (rouge #b9000a / #e31919) ;
-     *  - `@page { margin: 0 }` : c'est ce qui permet le bandeau rouge à fond
-     *    perdu en haut de chaque page, d'où le rembourrage porté par `.sheet` ;
+     *  - `@page { margin: 0 }` : le pied de page est ancré au bord de la
+     *    feuille, d'où le rembourrage porté par `.sheet` et `.doc-head` ;
      *  - un élément `position: fixed` est redessiné sur chaque page : c'est le
      *    pied, et `counter(page)` y donne la pagination ;
      *  - la seule police embarquée est DejaVu Sans, qui n'a AUCUN emoji. Ceux
      *    de la version précédente sortaient en carrés vides (□) jusque dans le
-     *    titre du document — d'où les symboles retenus ici (✓ ✂ ✉ ☎ ⚠ ●), tous
+     *    titre du document — d'où les symboles retenus ici (✓ ✉ ☎ ●), tous
      *    vérifiés présents dans la fonte, et le filtre `$plain` appliqué aux
      *    textes venant de la base (les avantages d'un type de billet, eux,
      *    contiennent des emoji).
+     *
+     * La page du billet suit l'écran Stitch « Billet PDF (Vue Téléchargement) » :
+     * en-tête blanc à marque rouge, titre de l'événement, repères sur deux
+     * colonnes, encadré acheteur, QR à droite derrière un filet pointillé, puis
+     * la perforation et les instructions en pied de page. Le reçu reprend le
+     * même en-tête pour que le document se tienne d'une page à l'autre.
      */
 
     /** Montant tel que l'affichent le site et les rapports : « 18 750 FCFA ». */
@@ -156,20 +162,27 @@
         .sheet + .sheet { page-break-before: always; }
         .sheet-body { padding: 20px 32px 0; }
 
-        /* --- Bandeau de tête --------------------------------------------- */
-        .band { background-color: #b9000a; color: #ffffff; padding: 15px 32px 13px; }
-        .band table { width: 100%; }
-        .band td { vertical-align: top; }
-        .wordmark { font-size: 18px; font-weight: bold; }
-        .band-sub,
-        .band-kind {
-            font-size: 7.5px;
-            letter-spacing: 1.4px;
+        /* --- En-tête de document ----------------------------------------- */
+        /*
+         * Fond blanc, marque en rouge à gauche, nature du document à droite :
+         * la tête de l'écran Stitch « Billet PDF (Vue Téléchargement) ». Le
+         * bandeau rouge à fond perdu qu'il remplace mangeait le tiers haut de
+         * chaque page, et le rouge sert mieux en accent qu'en aplat.
+         */
+        .doc-head { padding: 26px 36px 0; }
+        .doc-head table { width: 100%; }
+        .doc-head td { vertical-align: top; }
+        .doc-head .right { text-align: right; }
+        .wordmark { font-size: 23px; font-weight: bold; color: #b9000a; }
+        .wordmark-sub { font-size: 9px; color: #5b5f63; margin-top: 2px; }
+        .doc-kind {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            color: #ffdad5;
+            color: #191c1d;
         }
-        .band-right { text-align: right; }
-        .band-ref { font-size: 15px; font-weight: bold; }
+        .doc-ref { font-size: 10px; font-weight: bold; color: #5b5f63; margin-top: 3px; }
 
         /* --- Titres de section ------------------------------------------- */
         .section {
@@ -222,8 +235,6 @@
         .chip--ok { background-color: #d1e7dd; color: #0f5132; }
         .chip--wait { background-color: #ffddb7; color: #7f5000; }
         .chip--dead { background-color: #ffdad6; color: #93000a; }
-        .chip--type { background-color: #b9000a; color: #ffffff; }
-        .chip--neutral { background-color: #e7e8e9; color: #5b5f63; }
 
         .warning {
             border-left: 3px solid #ba1a1a;
@@ -264,88 +275,118 @@
         }
         .mono { font-family: 'DejaVu Sans Mono', monospace; }
 
-        /* --- Billet ------------------------------------------------------ */
-        /*
-         * Un billet occupe une page entière : les billets d'une même commande
-         * portent des participants différents, et chacun doit pouvoir partir
-         * seul. Le cadre est donc dimensionné pour remplir la page — d'où la
-         * hauteur posée sur la zone centrale, qui absorbe le vide plutôt que de
-         * le laisser en bas de feuille. Une hauteur, pas une position absolue :
-         * si le contenu grandit (titre long, bandeau d'avertissement), le
-         * tableau grandit avec lui au lieu de déborder sur une deuxième page.
-         */
+        /* L'événement rappelé sur le reçu, au-dessus de ses lignes. */
         .event-title { font-size: 19px; font-weight: bold; line-height: 1.2; }
         .event-when { font-size: 11px; color: #5b5f63; margin-top: 3px; }
 
-        .ticket { width: 100%; border: 1px solid #d5d8da; border-collapse: collapse; }
-        .ticket td { vertical-align: top; }
-        /* Les bordures sont posées sur la cellule elle-même, pas via `.rangée td` :
-           un sélecteur descendant atteindrait aussi les cellules des tableaux
-           imbriqués, et dessinait un filet sous chaque rappel. */
-        .ticket-head-cell {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #d5d8da;
-            padding: 14px 17px 15px;
-        }
-        .ticket-facts { padding: 15px 17px 17px; }
-        .ticket-facts .pairs td { padding: 4px 0; }
-        .ticket-facts .pairs .k { width: 42%; }
-
-        /* Le QR sous les informations, et non à côté : en pleine largeur il tient
-           en 300 px (79 mm à l'impression), ce qui se scanne du premier coup
-           depuis une feuille comme depuis un écran de téléphone. C'est aussi ce
-           qui donne au billet sa hauteur, sans hauteur forcée nulle part. */
-        .ticket-qr-cell {
-            border-top: 1px dashed #b9000a;
-            padding: 18px 12px 16px;
+        /* --- Billet ------------------------------------------------------ */
+        /*
+         * La composition de l'écran Stitch « Billet PDF (Vue Téléchargement) » :
+         * le titre de l'événement, ses repères sur deux colonnes, l'encadré
+         * acheteur, et le QR **à droite** derrière un filet pointillé vertical.
+         *
+         * Le billet n'est plus posé dans un cadre : la page EST le billet, ce
+         * qui laisse au titre la largeur dont il a besoin. Un billet par page
+         * reste la règle — les billets d'une même commande portent des
+         * participants différents et chacun doit pouvoir partir seul.
+         */
+        .tk-title { font-size: 22px; font-weight: bold; line-height: 1.15; }
+        .tk-cols { width: 100%; }
+        /* La hauteur porte la mise en page : elle étire la rangée du billet, ce
+           qui pousse la perforation et les instructions en bas de feuille au
+           lieu de les laisser flotter au milieu. Une hauteur, pas une position
+           absolue — si le contenu grandit (titre long, bandeau d'avertissement),
+           la rangée grandit avec lui plutôt que de déborder sur une page de
+           plus. Elle étire aussi le filet pointillé qui sépare le QR, comme le
+           fait le design sur toute la hauteur de la carte. */
+        .tk-cols .tk-main { vertical-align: top; padding-right: 22px; height: 660px; }
+        .tk-cols .tk-qr {
+            vertical-align: top;
+            width: 205px;
+            border-left: 1px dashed #e8bcb7;
+            padding-left: 22px;
             text-align: center;
         }
+
+        /* Repères de la séance : libellé en capitales, valeur, précision. */
+        .meta { width: 100%; margin-top: 16px; }
+        .meta td { vertical-align: top; padding: 0 16px 12px 0; }
+        .meta .lbl {
+            font-size: 8px;
+            font-weight: bold;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #5b5f63;
+            margin-bottom: 2px;
+        }
+        .meta .val { font-size: 11.5px; font-weight: bold; }
+        .meta .sub { font-size: 9.5px; color: #5b5f63; font-weight: normal; }
+
+        .buyer {
+            background-color: #f8f9fa;
+            border: 1px solid #e7e8e9;
+            padding: 11px 13px;
+        }
+        .buyer-title {
+            font-size: 8px;
+            font-weight: bold;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #5b5f63;
+            margin-bottom: 6px;
+        }
+        .buyer table { width: 100%; }
+        .buyer td { padding: 2px 0; font-size: 10px; vertical-align: baseline; }
+        .buyer .bk { color: #5b5f63; }
+        .buyer .bv { text-align: right; font-weight: bold; }
+        .buyer .bv--accent { color: #b9000a; }
+        .buyer .bv--price { font-size: 14px; }
+
+        /* Le QR tient en 175 px (46 mm à l'impression) : plus petit que la
+           pleine largeur d'avant, mais l'image reste écrite en 600 px, donc à
+           plus du triple de la résolution affichée. */
         .qr-frame {
-            width: 316px;
-            margin: 0 auto;
-            border: 1px solid #d5d8da;
+            border: 1px solid #e7e8e9;
             padding: 7px;
             background-color: #ffffff;
         }
         .qr-number {
             font-family: 'DejaVu Sans Mono', monospace;
-            font-size: 14px;
+            font-size: 11px;
             font-weight: bold;
-            margin-top: 10px;
+            margin-top: 8px;
         }
-        .qr-hint {
-            font-size: 7.5px;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            color: #5b5f63;
-        }
+        .qr-note { font-size: 8.5px; color: #5b5f63; margin-top: 6px; line-height: 1.35; }
 
-        .benefits { margin-top: 13px; font-size: 9.5px; color: #5b5f63; }
+        .benefits { margin-top: 12px; font-size: 9.5px; color: #5b5f63; }
         .benefits span { padding-right: 12px; }
 
-        .ticket-foot-cell {
-            background-color: #f8f9fa;
-            border-top: 1px solid #d5d8da;
-            padding: 10px 17px;
-            font-size: 9px;
-            color: #5b5f63;
+        /* Perforation : le pointillé que le design fait courir d'un bord à
+           l'autre, avec une encoche à chaque extrémité. Les encoches sont
+           dessinées en gris de page, comme une découpe dans la feuille. */
+        .perf { margin: 22px 0 18px; }
+        .perf table { width: 100%; border-collapse: collapse; }
+        .perf td { vertical-align: middle; }
+        .perf .notch { width: 10px; padding: 0; }
+        .perf .notch div {
+            height: 16px;
+            background-color: #edeeef;
+            border: 1px solid #e1e3e4;
         }
-        .ticket-foot-cell table { width: 100%; }
-        .ticket-foot-cell .dot { width: 11px; color: #b9000a; }
-        .ticket-foot-cell .r { padding: 1px 12px 1px 0; }
+        .perf .notch--l div { border-left: none; border-radius: 0 8px 8px 0; }
+        .perf .notch--r div { border-right: none; border-radius: 8px 0 0 8px; }
+        .perf .line { border-top: 1px dashed #926e69; padding: 0 6px; }
 
-        /* Ligne de découpe : la souche que garde le contrôle à l'entrée. */
-        .ticket-stub-cell { border-top: 1px dashed #7a7f82; padding: 4px 17px 12px; }
-        .cut { color: #7a7f82; font-size: 8.5px; margin-bottom: 6px; }
-        .stub { width: 100%; font-size: 9px; }
-        .stub td { padding-right: 10px; vertical-align: top; }
-        .stub .sk {
-            font-size: 7px;
-            letter-spacing: 0.8px;
+        .instructions-title {
+            font-size: 8.5px;
+            font-weight: bold;
+            letter-spacing: 1.2px;
             text-transform: uppercase;
-            color: #5b5f63;
+            margin-bottom: 5px;
         }
-        .stub .sv { font-weight: bold; }
+        .instructions { width: 100%; }
+        .instructions td { font-size: 9px; color: #5b5f63; padding: 1.5px 0; vertical-align: top; }
+        .instructions .dot { width: 13px; }
 
         /* --- Conditions -------------------------------------------------- */
         .terms {
@@ -399,16 +440,16 @@
 
     {{-- ================================ REÇU ================================ --}}
     <div class="sheet">
-        <div class="band">
+        <div class="doc-head">
             <table>
                 <tr>
                     <td>
                         <div class="wordmark">TicketExpress</div>
-                        <div class="band-sub">Billetterie en ligne · Togo</div>
+                        <div class="wordmark-sub">Votre partenaire billetterie</div>
                     </td>
-                    <td class="band-right">
-                        <div class="band-kind">Reçu d'achat</div>
-                        <div class="band-ref">N° {{ $orderRef }}</div>
+                    <td class="right">
+                        <div class="doc-kind">Reçu d'achat</div>
+                        <div class="doc-ref">N° {{ $orderRef }}</div>
                     </td>
                 </tr>
             </table>
@@ -606,8 +647,8 @@
                     <tr>
                         <td class="dot">●</td>
                         <td>
-                            Chaque billet est nominatif, porte son propre QR code et n'autorise
-                            qu'une seule entrée. Les conditions d'accès sont rappelées sur chacun.
+                            Chaque billet porte son propre QR code et n'autorise qu'une seule
+                            entrée. Les conditions d'accès sont rappelées sur chacun.
                         </td>
                     </tr>
                     <tr>
@@ -645,42 +686,54 @@
                telle que la calcule celui qui la fait appliquer. */
             $opensAt = $event ? \App\Support\CheckInWindow::opensAt($event, $occurrence) : null;
 
-            $isUsable = $isHonoured && $ticket->status === \App\Enums\TicketStatus::VALID;
+            /* Un billet peut être inutilisable pour deux raisons distinctes : son
+               propre état, ou celui de la commande. Les trois cas sont nommés ici
+               pour que le bandeau dise la bonne chose — « Billet valide » sur une
+               commande annulée serait un contresens. */
+            $isUsed = $ticket->status === \App\Enums\TicketStatus::USED;
+            $isRevoked = $ticket->status !== \App\Enums\TicketStatus::VALID;
+            $isUsable = $isHonoured && ! $isRevoked;
 
             $benefits = collect($ticketType?->benefits ?? [])
                 ->map(static fn ($benefit) => $plain(is_string($benefit) ? $benefit : ''))
                 ->filter()
                 ->take(4);
+
+            /* Le QR en base64 : dompdf ne rend pas un <svg> inline et n'irait pas
+               chercher l'URL protégée par jeton pendant le rendu (le PDF est
+               parfois produit en file d'attente, hors contexte HTTP). L'image est
+               écrite en 600 px pour un affichage en 175 px — plus du triple de la
+               résolution nécessaire, ce qui garde les modules francs sur une
+               feuille pliée ou photocopiée. */
+            $qrUri = \App\Support\QrImage::dataUri($ticket->qr_code, 600, 1);
         @endphp
 
         <div class="sheet">
-            <div class="band">
+            <div class="doc-head">
                 <table>
                     <tr>
                         <td>
                             <div class="wordmark">TicketExpress</div>
-                            <div class="band-sub">Billet électronique</div>
+                            <div class="wordmark-sub">Votre partenaire billetterie</div>
                         </td>
-                        <td class="band-right">
-                            <div class="band-kind">Billet {{ $loop->iteration }} / {{ $ticketCount }}</div>
-                            <div class="band-ref">{{ $ticket->ticket_number }}</div>
+                        <td class="right">
+                            <div class="doc-kind">Billet d'entrée</div>
+                            <div class="doc-ref">
+                                ID : {{ $ticket->ticket_number }}@if($ticketCount > 1) &nbsp;·&nbsp; billet {{ $loop->iteration }} / {{ $ticketCount }}@endif
+                            </div>
                         </td>
                     </tr>
                 </table>
             </div>
 
             <div class="sheet-body">
-                {{-- Un billet peut être inutilisable pour deux raisons distinctes :
-                     son propre état, ou celui de la commande. Le bandeau nomme la
-                     bonne — « Billet valide » sur une commande annulée serait un
-                     contresens. --}}
                 @unless($isUsable)
                     <div class="warning">
-                        @if($ticket->status === \App\Enums\TicketStatus::USED)
+                        @if($isUsed)
                             <strong>Billet utilisé.</strong>
                             Il a été validé le {{ $stamp($ticket->checked_in_at) }} : un QR code ne
                             permet qu'une seule entrée.
-                        @elseif($ticket->status !== \App\Enums\TicketStatus::VALID)
+                        @elseif($isRevoked)
                             <strong>Billet {{ mb_strtolower($ticket->status->label()) }}.</strong>
                             Ce billet ne donne plus accès à l'événement.
                         @else
@@ -690,86 +743,76 @@
                     </div>
                 @endunless
 
-                <table class="ticket">
+                <table class="tk-cols">
                     <tr>
-                        <td class="ticket-head-cell">
-                            <div class="event-title">{{ $event ? $plain($event->title) : 'Événement non renseigné' }}</div>
-                            <div class="event-when">
-                                {{ $day($startsAt) }} · {{ $hour($startsAt) }}@if($endsAt) – {{ $hour($endsAt) }}@endif
-                            </div>
-                            <div style="margin-top: 8px;">
-                                <span class="chip chip--type">{{ $plain($ticketType?->name) ?: 'Billet' }}</span>
-                                @if($ticketType?->location_details)
-                                    <span class="chip chip--neutral">{{ $plain($ticketType->location_details) }}</span>
-                                @endif
-                                <span class="chip {{ $ticket->status === \App\Enums\TicketStatus::VALID ? 'chip--ok' : 'chip--dead' }}">{{ $ticket->status->label() }}</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="ticket-facts">
-                            <table class="cols">
+                        <td class="tk-main">
+                            <div class="tk-title">{{ $event ? $plain($event->title) : 'Événement non renseigné' }}</div>
+
+                            <table class="meta">
                                 <tr>
                                     <td width="50%">
-                                        <table class="pairs">
-                                            <tr>
-                                                <td class="k">Participant</td>
-                                                <td class="v">{{ $plain($ticket->attendee_name) ?: '—' }}</td>
-                                            </tr>
-                                            @if($ticket->attendee_email)
-                                                <tr>
-                                                    <td class="k">Email</td>
-                                                    <td class="v">{{ $ticket->attendee_email }}</td>
-                                                </tr>
-                                            @endif
-                                            <tr>
-                                                <td class="k">Prix payé</td>
-                                                <td class="v">{{ $money($paidUnit[$ticket->ticket_type_id] ?? $ticketType?->price ?? 0) }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="k">Commande</td>
-                                                <td class="v">
-                                                    n° {{ $orderRef }}
-                                                    <div class="tiny muted plain">{{ $plain($order->first_name.' '.$order->last_name) }}</div>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                        <div class="lbl">Date &amp; heure</div>
+                                        <div class="val">{{ $day($startsAt) }}</div>
+                                        <div class="sub">À partir de {{ $hour($startsAt) }}@if($endsAt) &nbsp;·&nbsp; fin {{ $hour($endsAt) }}@endif</div>
                                     </td>
-                                    <td class="gutter"></td>
                                     <td width="50%">
-                                        <table class="pairs">
-                                            <tr>
-                                                <td class="k">{{ $isOnline ? 'Accès' : 'Lieu' }}</td>
-                                                <td class="v">
-                                                    @if($isOnline)
-                                                        En ligne
-                                                        @if($event?->online_url)
-                                                            <div class="tiny mono plain">{{ $event->online_url }}</div>
-                                                        @endif
-                                                    @elseif($venue)
-                                                        {{ $plain($venue->name) }}
-                                                        <div class="tiny muted plain">
-                                                            {{ $plain($venue->address) }}, {{ $plain($venue->city) }}@if($venue->country), {{ $plain($venue->country) }}@endif
-                                                        </div>
-                                                    @else
-                                                        Communiqué par l'organisateur
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                            @if($opensAt)
-                                                <tr>
-                                                    <td class="k">Contrôle ouvert dès</td>
-                                                    <td class="v">{{ $stamp($opensAt) }}</td>
-                                                </tr>
+                                        <div class="lbl">{{ $isOnline ? 'Accès' : 'Lieu' }}</div>
+                                        @if($isOnline)
+                                            <div class="val">En ligne</div>
+                                            @if($event?->online_url)
+                                                <div class="sub mono">{{ $event->online_url }}</div>
                                             @endif
-                                            <tr>
-                                                <td class="k">Organisateur</td>
-                                                <td class="v">{{ $plain($event?->organizer?->company_name) ?: '—' }}</td>
-                                            </tr>
-                                        </table>
+                                        @elseif($venue)
+                                            <div class="val">{{ $plain($venue->name) }}</div>
+                                            <div class="sub">
+                                                {{ $plain($venue->address) }}, {{ $plain($venue->city) }}@if($venue->country), {{ $plain($venue->country) }}@endif
+                                            </div>
+                                        @else
+                                            <div class="val">Communiqué par l'organisateur</div>
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="lbl">Organisateur</div>
+                                        <div class="val">{{ $plain($event?->organizer?->company_name) ?: '—' }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="lbl">Contrôle ouvert dès</div>
+                                        <div class="val">{{ $opensAt ? $stamp($opensAt) : "À l'ouverture des portes" }}</div>
                                     </td>
                                 </tr>
                             </table>
+
+                            <div class="buyer">
+                                <div class="buyer-title">Informations acheteur</div>
+                                <table>
+                                    <tr>
+                                        <td class="bk">Nom</td>
+                                        <td class="bv">{{ $plain($ticket->attendee_name) ?: '—' }}</td>
+                                    </tr>
+                                    @if($ticket->attendee_email)
+                                        <tr>
+                                            <td class="bk">Email</td>
+                                            <td class="bv">{{ $ticket->attendee_email }}</td>
+                                        </tr>
+                                    @endif
+                                    <tr>
+                                        <td class="bk">Commande</td>
+                                        <td class="bv">n° {{ $orderRef }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bk">Catégorie</td>
+                                        <td class="bv bv--accent">
+                                            {{ $plain($ticketType?->name) ?: 'Billet' }}@if($ticketType?->location_details)<span class="plain muted"> &nbsp;·&nbsp; {{ $plain($ticketType->location_details) }}</span>@endif
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bk">Prix</td>
+                                        <td class="bv bv--price">{{ $money($paidUnit[$ticket->ticket_type_id] ?? $ticketType?->price ?? 0) }}</td>
+                                    </tr>
+                                </table>
+                            </div>
 
                             @if($benefits->isNotEmpty())
                                 <div class="benefits">
@@ -779,70 +822,50 @@
                                 </div>
                             @endif
                         </td>
-                    </tr>
-                    <tr>
-                        <td class="ticket-qr-cell">
-                            {{-- Image en base64 : dompdf ne rend pas un <svg> inline et ne va pas
-                                 chercher l'URL protégée par jeton pendant le rendu (le PDF est
-                                 parfois produit en file d'attente, hors contexte HTTP). Le PNG
-                                 est écrit en 600 px pour un affichage en 300 px, soit deux fois
-                                 la résolution nécessaire — ce qui garde les modules francs sur
-                                 une feuille pliée ou photocopiée. --}}
+                        <td class="tk-qr">
                             <div class="qr-frame">
-                                <img src="{{ \App\Support\QrImage::dataUri($ticket->qr_code, 600, 1) }}"
+                                <img src="{{ $qrUri }}"
                                      alt="QR code du billet {{ $ticket->ticket_number }}"
-                                     width="300" height="300">
+                                     width="175" height="175">
                             </div>
                             <div class="qr-number">{{ $ticket->ticket_number }}</div>
-                            <div class="qr-hint">à scanner à l'entrée</div>
+                            <div class="qr-note">
+                                Présentez ce code QR à l'entrée. Ce billet est unique et ne peut
+                                être scanné qu'une seule fois.
+                            </div>
                         </td>
                     </tr>
+                </table>
+
+                {{-- La perforation du design : le pointillé et ses deux encoches,
+                     qui donnent au document la silhouette d'un billet détachable. --}}
+                <div class="perf">
+                    <table>
+                        <tr>
+                            <td class="notch notch--l"><div></div></td>
+                            <td class="line"></td>
+                            <td class="notch notch--r"><div></div></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="instructions-title">Instructions importantes</div>
+                <table class="instructions">
                     <tr>
-                        <td class="ticket-foot-cell">
-                            <table>
-                                <tr>
-                                    <td class="dot">●</td>
-                                    <td class="r">Billet nominatif et non transférable — une pièce d'identité peut être demandée.</td>
-                                    <td class="dot">●</td>
-                                    <td class="r">Une seule entrée par QR code : une fois scanné, il ne sert plus.</td>
-                                </tr>
-                                <tr>
-                                    <td class="dot">●</td>
-                                    <td class="r">Sur papier ou sur l'écran du téléphone, au choix.</td>
-                                    <td class="dot">●</td>
-                                    <td class="r">Arrivez 30 minutes avant le début pour éviter l'attente.</td>
-                                </tr>
-                            </table>
-                        </td>
+                        <td class="dot">●</td>
+                        <td>Ce billet est soumis aux conditions générales de vente de TicketExpress.</td>
                     </tr>
                     <tr>
-                        <td class="ticket-stub-cell">
-                            <div class="cut">✂ &nbsp;souche à conserver</div>
-                            <table class="stub">
-                                <tr>
-                                    <td>
-                                        <div class="sk">Billet</div>
-                                        <div class="sv mono">{{ $ticket->ticket_number }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="sk">Participant</div>
-                                        <div class="sv">{{ $plain($ticket->attendee_name) ?: '—' }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="sk">Événement</div>
-                                        <div class="sv">{{ $event ? $plain($event->title) : '—' }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="sk">Date</div>
-                                        <div class="sv">{{ $day($startsAt) }} · {{ $hour($startsAt) }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="sk">Catégorie</div>
-                                        <div class="sv">{{ $plain($ticketType?->name) ?: '—' }}</div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
+                        <td class="dot">●</td>
+                        <td>Toute reproduction, falsification ou revente est strictement interdite.</td>
+                    </tr>
+                    <tr>
+                        <td class="dot">●</td>
+                        <td>L'organisateur se réserve le droit de vérifier l'identité du porteur (pièce d'identité requise).</td>
+                    </tr>
+                    <tr>
+                        <td class="dot">●</td>
+                        <td>Arrivez au moins 30 minutes avant le début de l'événement.</td>
                     </tr>
                 </table>
             </div>
