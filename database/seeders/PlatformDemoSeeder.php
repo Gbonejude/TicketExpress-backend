@@ -74,6 +74,53 @@ final class PlatformDemoSeeder extends Seeder
     private const ASSETS = __DIR__.'/assets';
 
     /**
+     * Le vocabulaire dans lequel sont tirés les acheteurs.
+     *
+     * `User::factory()` appelle faker, qui donnait « Dr. Hank Franecki » et
+     * « deshawn10@example.net ». Sur une capture du tableau de bord, dans la
+     * liste des participants ou imprimé sur un billet, cela ne ressemble à rien
+     * de ce que la plateforme verra à Lomé — au même titre que les événements
+     * et les lieux, écrits à la main pour cette raison.
+     *
+     * Prénoms ewe et mina (les jours de naissance : Komi, Kossi, Afi, Akouvi),
+     * kabyè et tem pour le nord, et les prénoms chrétiens qui se portent tout
+     * autant. Les patronymes viennent des mêmes régions ; aucun nom de famille
+     * politiquement chargé n'y figure.
+     *
+     * @var array<int, string>
+     */
+    private const FIRST_NAMES = [
+        'Komi', 'Kossi', 'Kodjo', 'Kwami', 'Yao', 'Mawuli', 'Elom', 'Sena', 'Dodji', 'Anani',
+        'Afi', 'Ama', 'Adjo', 'Akouvi', 'Afiwa', 'Akossiwa', 'Ayélé', 'Sika', 'Yawa', 'Enyonam',
+        'Emmanuel', 'Prosper', 'Josué', 'Bénédicte', 'Rachelle', 'Sylvie', 'Grâce', 'Marielle',
+        'Essossinam', 'Nayéma', 'Bawa', 'Damigou',
+    ];
+
+    /** @var array<int, string> */
+    private const LAST_NAMES = [
+        'Adjovi', 'Agbodjan', 'Aholou', 'Amegbor', 'Amouzou', 'Apaloo', 'Ayivi', 'Akakpo',
+        'Bodjona', 'Dossou', 'Folly', 'Gbadoé', 'Kékéh', 'Kponton', 'Lawson', 'Mensah',
+        'Sossou', 'Tossou', 'Zinsou', 'Amétépé', 'Nyametso', 'Johnson', 'Creppy', 'Aziadekey',
+        'Assih', 'Tchalim', 'Kolani', 'Lamboni', 'Dermane', 'Sambiani', 'Tchagnao',
+    ];
+
+    /**
+     * Les fournisseurs sur lesquels l'adresse est construite.
+     *
+     * Ceux que les gens utilisent réellement, plutôt que `example.org`. Ces
+     * adresses pourraient donc exister : le seeder n'envoie aucun mail — il
+     * écrit les commandes directement, sans passer par `OrderPaidEvent` — et le
+     * développement tourne avec `MAIL_MAILER=log`. À garder en tête avant de
+     * pointer un vrai SMTP sur cette base.
+     *
+     * @var array<int, string>
+     */
+    private const MAIL_PROVIDERS = ['gmail.com', 'yahoo.fr', 'outlook.com', 'hotmail.fr'];
+
+    /** Avance dans les deux listes de noms, un acheteur après l'autre. */
+    private int $personCursor = 0;
+
+    /**
      * Nombre de commandes d'historique.
      *
      * Assez pour que les courbes des rapports aient une forme sur huit mois,
@@ -628,6 +675,70 @@ final class PlatformDemoSeeder extends Seeder
     }
 
     /**
+     * Le porteur inscrit sur un billet : l'acheteur de la commande.
+     *
+     * C'est ce que fait `OrderPaidListener` en production — le billet est au
+     * porteur, émis au nom de celui qui a payé. La factory, elle, inventait un
+     * inconnu par billet : le reçu portait « Easton Weber » et son billet
+     * « Kariane Morar », deux personnes sans rapport sur le même document.
+     *
+     * @return array{attendee_name: string, attendee_email: string}
+     */
+    private function bearerOf(Order $order): array
+    {
+        return [
+            'attendee_name' => trim($order->first_name.' '.$order->last_name),
+            'attendee_email' => (string) $order->email,
+        ];
+    }
+
+    /**
+     * L'acheteur suivant : un nom togolais, et l'adresse qui en découle.
+     *
+     * Les deux listes sont parcourues ensemble mais n'ont pas la même longueur
+     * — 32 prénoms, 31 patronymes, premiers entre eux — donc près de mille
+     * couples défilent avant qu'un seul se répète.
+     */
+    private function togoleseUser(): User
+    {
+        $first = self::FIRST_NAMES[$this->personCursor % count(self::FIRST_NAMES)];
+        $last = self::LAST_NAMES[$this->personCursor % count(self::LAST_NAMES)];
+
+        $this->personCursor++;
+
+        return User::factory()->create([
+            'first_name' => $first,
+            'last_name' => $last,
+            'email' => $this->mailboxFor($first, $last),
+            // Les préfixes réellement attribués au Togo (Togocom, Moov).
+            'phone' => '+228'.fake()->randomElement(['90', '91', '92', '93', '96', '97', '98', '99'])
+                .fake()->numerify('######'),
+        ]);
+    }
+
+    /**
+     * « komi.sossou@gmail.com » : le nom, débarrassé de ses accents.
+     *
+     * Un chiffre n'est ajouté que si l'adresse est déjà prise — c'est ainsi que
+     * les gens s'y prennent quand leur nom est courant, et cela garde la
+     * colonne unique sans y coller un identifiant.
+     */
+    private function mailboxFor(string $first, string $last): string
+    {
+        $base = Str::slug($first.' '.$last, '.');
+        $provider = self::MAIL_PROVIDERS[$this->personCursor % count(self::MAIL_PROVIDERS)];
+
+        $email = $base.'@'.$provider;
+        $suffix = 1;
+
+        while (User::query()->where('email', $email)->exists()) {
+            $email = $base.++$suffix.'@'.$provider;
+        }
+
+        return $email;
+    }
+
+    /**
      * Attaches a seed image, leaving the source file where it is.
      *
      * @param  \Spatie\MediaLibrary\HasMedia  $model
@@ -691,7 +802,7 @@ final class PlatformDemoSeeder extends Seeder
      */
     private function seedHistory(): void
     {
-        $buyers = User::factory()->count(18)->create();
+        $buyers = collect(range(1, 18))->map(fn (): User => $this->togoleseUser());
 
         $events = Event::query()
             // L'organisateur est chargé ici parce que c'est son compte qu'on
@@ -743,7 +854,7 @@ final class PlatformDemoSeeder extends Seeder
 
     private function seedFavorites(User $client): void
     {
-        $participants = User::factory()->count(5)->create()->push($client);
+        $participants = collect(range(1, 5))->map(fn (): User => $this->togoleseUser())->push($client);
 
         foreach (Event::query()->inRandomOrder()->limit(12)->get() as $event) {
             $event->favoritedBy()->syncWithoutDetaching(
@@ -814,6 +925,7 @@ final class PlatformDemoSeeder extends Seeder
                 Ticket::factory()->create([
                     'order_id' => $order->id,
                     'ticket_type_id' => $tier->id,
+                    ...$this->bearerOf($order),
                 ]);
             }
         }
@@ -925,6 +1037,7 @@ final class PlatformDemoSeeder extends Seeder
                     'ticket_type_id' => $tier->id,
                     'created_at' => $placedAt,
                     'updated_at' => $placedAt,
+                    ...$this->bearerOf($order),
                 ]);
 
                 if ($status === OrderStatus::CANCELLED) {
