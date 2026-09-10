@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Ticket\RefundTicketRequest;
 use App\Http\Resources\V1\TicketResource;
 use App\Models\Ticket;
+use App\Support\CatalogueAudience;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,6 +49,14 @@ final class TicketController extends Controller
                 'order' => fn ($q) => $q->with('items')->withCount('tickets'),
             ])
             ->latest();
+
+        // Cloisonnement : un organisateur ne voit que les billets émis pour ses
+        // propres événements. L'administration voit tout.
+        $scopedOrganizerId = CatalogueAudience::scopedOrganizerId($request);
+
+        if ($scopedOrganizerId !== null) {
+            $query->whereHas('ticketType.event', fn (Builder $q) => $q->where('organizer_id', $scopedOrganizerId));
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));

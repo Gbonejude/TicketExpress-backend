@@ -91,6 +91,8 @@ final class EventOccurrenceController extends Controller
         /** @var array{event_id: string, start_date: string, end_date: string, max_attendees: int|null, status: string, notes: string|null} $data */
         $data = $request->validated();
 
+        $this->assertOwnsEvent(Event::findOrFail($data['event_id']));
+
         $occurrence = $action->execute($data);
 
         return $this->created(new EventOccurrenceResource($occurrence));
@@ -135,6 +137,8 @@ final class EventOccurrenceController extends Controller
      */
     public function update(UpdateEventOccurrenceRequest $request, EventOccurrence $occurrence, UpdateEventOccurrenceAction $action): JsonResponse
     {
+        $this->assertOwnsEvent($occurrence->event);
+
         /** @var array{start_date?: string, end_date?: string, max_attendees?: int|null, status?: string, notes?: string|null} $data */
         $data = $request->validated();
 
@@ -158,8 +162,27 @@ final class EventOccurrenceController extends Controller
      */
     public function destroy(EventOccurrence $occurrence, DeleteEventOccurrenceAction $action): JsonResponse
     {
+        $this->assertOwnsEvent($occurrence->event);
+
         $action->execute(['occurrence_id' => $occurrence->id]);
 
         return $this->noContent();
+    }
+
+    /**
+     * Un organisateur ne gère que les représentations de ses propres événements.
+     *
+     * Il n'existe pas de policy dédiée aux occurrences : la règle est celle de
+     * l'événement parent. `scopedOrganizerId` vaut `null` pour l'administration
+     * (aucune borne) et l'identifiant de l'organisateur pour un gestionnaire —
+     * 403 dès que l'événement visé n'est pas le sien.
+     */
+    private function assertOwnsEvent(Event $event): void
+    {
+        $scopedOrganizerId = CatalogueAudience::scopedOrganizerId(request());
+
+        if ($scopedOrganizerId !== null && (string) $event->organizer_id !== $scopedOrganizerId) {
+            abort(403, 'Vous ne pouvez gérer que les représentations de vos propres événements.');
+        }
     }
 }

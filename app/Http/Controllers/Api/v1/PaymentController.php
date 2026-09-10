@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\PaymentResource;
 use App\Models\Payment;
+use App\Support\CatalogueAudience;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,6 +39,18 @@ final class PaymentController extends Controller
         $query = Payment::query()
             ->with('order.user')
             ->latest();
+
+        // Cloisonnement : un organisateur ne voit que les paiements des commandes
+        // qui portent un billet de l'un de ses événements. L'administration voit
+        // tout.
+        $scopedOrganizerId = CatalogueAudience::scopedOrganizerId($request);
+
+        if ($scopedOrganizerId !== null) {
+            $query->whereHas(
+                'order.items.ticketType.event',
+                fn (Builder $q) => $q->where('organizer_id', $scopedOrganizerId)
+            );
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));

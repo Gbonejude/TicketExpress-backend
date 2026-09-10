@@ -75,6 +75,9 @@ final class TicketTypeController extends Controller
      */
     public function store(StoreTicketTypeRequest $request, Event $event, CreateTicketTypeAction $action): JsonResponse
     {
+        // Un organisateur n'ajoute un type de billet qu'à ses propres événements.
+        $this->authorize('create', [TicketType::class, $event]);
+
         /** @var array{name: string, description?: string|null, price: string, quantity: int, sold_quantity?: int, sale_start_date?: string|null, sale_end_date?: string|null} $validated */
         $validated = $request->validated();
 
@@ -146,6 +149,8 @@ final class TicketTypeController extends Controller
      */
     public function update(UpdateTicketTypeRequest $request, Event $event, TicketType $id, UpdateTicketTypeAction $action): JsonResponse
     {
+        $this->authorize('update', $id);
+
         /** @var array{ticketType: TicketType, name?: string, description?: string|null, price?: string, quantity?: int, sale_start_date?: string|null, sale_end_date?: string|null} $data */
         $data = [
             'ticketType' => $id,
@@ -171,6 +176,8 @@ final class TicketTypeController extends Controller
      */
     public function destroy(Event $event, TicketType $id, DeleteTicketTypeAction $action): JsonResponse
     {
+        $this->authorize('delete', $id);
+
         $action->execute(['ticketType' => $id]);
 
         return $this->noContent();
