@@ -13,6 +13,7 @@ use App\Http\Requests\V1\Coupon\StoreCouponRequest;
 use App\Http\Requests\V1\Coupon\UpdateCouponRequest;
 use App\Http\Resources\V1\CouponResource;
 use App\Models\Coupon;
+use App\Support\CatalogueAudience;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,6 +45,15 @@ final class CouponController extends Controller
             ->with('events')
             ->withCount('events')
             ->latest();
+
+        // Cloisonnement : un organisateur ne voit que les coupons rattachés à
+        // ses propres événements. Un coupon sans événement n'est à personne : il
+        // ne reste visible que pour l'administration.
+        $scopedOrganizerId = CatalogueAudience::scopedOrganizerId($request);
+
+        if ($scopedOrganizerId !== null) {
+            $query->whereHas('events', fn (Builder $q) => $q->where('organizer_id', $scopedOrganizerId));
+        }
 
         if ($request->filled('search')) {
             $search = (string) $request->input('search');
@@ -77,6 +87,8 @@ final class CouponController extends Controller
      */
     public function store(StoreCouponRequest $request, CreateCouponAction $action): JsonResponse
     {
+        $this->authorize('create', Coupon::class);
+
         /** @var array{code: string, type: string, value: string, max_usage?: int|null, start_date?: string|null, end_date?: string|null, event_ids?: array<int, string>|null} $data */
         $data = $request->validated();
 
@@ -100,6 +112,8 @@ final class CouponController extends Controller
      */
     public function show(Coupon $id): JsonResponse
     {
+        $this->authorize('view', $id);
+
         $id->load('events')->loadCount('events');
 
         return $this->success(new CouponResource($id));
@@ -125,6 +139,8 @@ final class CouponController extends Controller
      */
     public function update(UpdateCouponRequest $request, Coupon $id, UpdateCouponAction $action): JsonResponse
     {
+        $this->authorize('update', $id);
+
         /** @var array{coupon: Coupon, code?: string, type?: string, value?: string, max_usage?: int|null, start_date?: string|null, end_date?: string|null, event_ids?: array<int, string>|null} $data */
         $data = [
             'coupon' => $id,
@@ -149,6 +165,8 @@ final class CouponController extends Controller
      */
     public function destroy(Coupon $id, DeleteCouponAction $action): JsonResponse
     {
+        $this->authorize('delete', $id);
+
         $action->execute(['coupon' => $id]);
 
         return $this->noContent();

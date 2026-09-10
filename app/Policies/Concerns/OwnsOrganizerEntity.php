@@ -26,12 +26,17 @@ trait OwnsOrganizerEntity
      */
     protected function screenOrOwner(User $user, string $screenPermission, int|string|null $ownerUserId): bool
     {
-        if ($user->can($screenPermission)) {
-            return true;
+        // Un organisateur reste borné à ses propres entités, même lorsqu'il
+        // détient la permission d'écran : celle-ci lui ouvre l'écran, elle ne lui
+        // donne pas les données des confrères. Sans cette borne, `can(screen.*)`
+        // était vrai pour tout organisateur et la branche propriétaire — jamais
+        // atteinte — ne servait à rien. L'administration, elle, ne passe pas ici :
+        // {@see AdminBypassesAll::before()} l'autorise avant la policy.
+        if ($user->hasRole('organizer-manager')) {
+            return $ownerUserId !== null
+                && (string) $user->id === (string) $ownerUserId;
         }
 
-        return $ownerUserId !== null
-            && $user->hasRole('organizer-manager')
-            && (string) $user->id === (string) $ownerUserId;
+        return $user->can($screenPermission);
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Order\StoreOrderRequest;
 use App\Http\Resources\V1\OrderResource;
 use App\Models\Order;
+use App\Support\CatalogueAudience;
 use App\Support\PersonSearch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -80,12 +81,20 @@ final class OrderController extends Controller
             ->withCount(['items', 'tickets'])
             ->latest();
 
-        // Back-office (admin / super-admin) sees every order; anyone else only
-        // their own.
+        // Trois publics, trois portées. L'administration voit toutes les
+        // commandes ; un organisateur, celles qui portent un billet de l'un de
+        // ses événements (l'écran « Réservations » du back-office) ; un
+        // participant, seulement les siennes en tant qu'acheteur.
+        //
+        // L'organisateur n'est donc PAS filtré par `user_id` : ce sont les
+        // réservations de ses événements qui l'intéressent, pas ses propres
+        // achats.
         $user = $request->user();
-        $isAdmin = $user && $user->hasAnyRole(['admin', 'super-admin']);
+        $scopedOrganizerId = CatalogueAudience::scopedOrganizerId($request);
 
-        if (! $isAdmin) {
+        if ($scopedOrganizerId !== null) {
+            $query->whereHas('items.ticketType.event', fn (Builder $q) => $q->where('organizer_id', $scopedOrganizerId));
+        } elseif (! ($user && $user->hasAnyRole(['admin', 'super-admin']))) {
             $query->where('user_id', $user?->id);
         }
 

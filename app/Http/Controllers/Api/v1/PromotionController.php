@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\PromotionResource;
 use App\Models\TicketType;
+use App\Support\CatalogueAudience;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,14 @@ final class PromotionController extends Controller
             ->whereNotNull('promotional_price')
             ->with('event')
             ->latest();
+
+        // Cloisonnement : un organisateur ne voit que les promotions de ses
+        // propres événements. L'administration voit tout.
+        $scopedOrganizerId = CatalogueAudience::scopedOrganizerId($request);
+
+        if ($scopedOrganizerId !== null) {
+            $query->whereHas('event', fn (Builder $q) => $q->where('organizer_id', $scopedOrganizerId));
+        }
 
         if ($request->filled('event_id')) {
             $query->where('event_id', $request->input('event_id'));
@@ -81,6 +90,8 @@ final class PromotionController extends Controller
      */
     public function update(Request $request, TicketType $ticketType): JsonResponse
     {
+        $this->authorize('update', $ticketType);
+
         $validated = $request->validate([
             'promotional_price' => ['required', 'numeric', 'min:0', 'lt:'.$ticketType->price],
             'promotion_start_date' => ['required', 'date'],
@@ -104,6 +115,8 @@ final class PromotionController extends Controller
      */
     public function destroy(TicketType $ticketType): JsonResponse
     {
+        $this->authorize('delete', $ticketType);
+
         $ticketType->update([
             'promotional_price' => null,
             'promotion_start_date' => null,

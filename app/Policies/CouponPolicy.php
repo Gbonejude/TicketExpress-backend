@@ -23,8 +23,13 @@ final class CouponPolicy
 
     public function create(User $user): bool
     {
-        return $user->can(Screen::COUPONS->permission())
-            || $user->hasRole('manager');
+        // Un organisateur crée ses coupons dès lors que son compte porte un
+        // organisateur ; l'administration passe par la permission d'écran.
+        // (Le rôle testé était `manager`, qui n'existe pas — le rôle réel est
+        // `organizer-manager` —, donc cette branche ne s'ouvrait jamais.)
+        return $user->hasRole('organizer-manager')
+            ? $user->organizer !== null
+            : $user->can(Screen::COUPONS->permission());
     }
 
     public function delete(User $user, Coupon $coupon): bool
@@ -34,40 +39,31 @@ final class CouponPolicy
 
     public function update(User $user, Coupon $coupon): bool
     {
-        // Coupons can be managed by admins with screen permission OR
-        // the organizer who owns any of the events linked to this coupon
-        if ($user->can(Screen::COUPONS->permission())) {
-            return true;
+        // Un organisateur n'administre qu'un coupon rattaché à l'un de ses
+        // événements, même s'il détient `screen.coupons` : la permission ouvre
+        // l'écran, pas les coupons des confrères. L'administration est déjà
+        // passée par {@see AdminBypassesAll::before()}.
+        if ($user->hasRole('organizer-manager')) {
+            return $this->ownsAnyEvent($user, $coupon);
         }
 
-        // Check if user is the organizer of any event linked to this coupon
-        if ($user->hasRole('manager') && $user->organizer) {
-            foreach ($coupon->events as $event) {
-                if ((string) $event->organizer_id === (string) $user->organizer->id) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return $user->can(Screen::COUPONS->permission());
     }
 
     public function view(User $user, Coupon $coupon): bool
     {
-        // Coupons are viewable by admins or organizers who own related events
-        if ($user->can(Screen::COUPONS->permission())) {
-            return true;
+        return $this->update($user, $coupon);
+    }
+
+    /** Vrai si l'un des événements du coupon appartient à l'organisateur du compte. */
+    private function ownsAnyEvent(User $user, Coupon $coupon): bool
+    {
+        if ($user->organizer === null) {
+            return false;
         }
 
-        // Check if user is the organizer of any event linked to this coupon
-        if ($user->hasRole('manager') && $user->organizer) {
-            foreach ($coupon->events as $event) {
-                if ((string) $event->organizer_id === (string) $user->organizer->id) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return $coupon->events->contains(
+            fn ($event): bool => (string) $event->organizer_id === (string) $user->organizer->id
+        );
     }
 }

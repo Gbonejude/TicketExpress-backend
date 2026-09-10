@@ -41,6 +41,43 @@ final class CatalogueAudience
     }
 
     /**
+     * L'organisateur auquel une requête est bornée, ou `null` si elle voit tout.
+     *
+     * Voir tout le catalogue passé (`seesEverything`) et n'en administrer que sa
+     * part sont deux règles distinctes : un organisateur revient bien sur ses
+     * propres événements terminés, mais jamais sur ceux d'un confrère. La
+     * permission d'écran lui ouvre l'écran, elle ne lui donne pas les données des
+     * autres — c'est précisément ce que `screen.events` laissait faire tant que
+     * rien ne bornait la requête.
+     *
+     * L'administration (admin / super-admin) n'est bornée par rien. Un
+     * participant non plus n'est pas concerné ici : ses listes se cloisonnent par
+     * identité d'acheteur, pas par organisateur.
+     *
+     * Le sentinelle `__none__` — un identifiant qu'aucun organisateur ne porte —
+     * ferme la liste d'un gestionnaire dont le compte n'a pas encore
+     * d'organisateur, au lieu de la laisser tout montrer.
+     */
+    public static function scopedOrganizerId(Request $request): ?string
+    {
+        $user = self::user($request);
+
+        if ($user === null) {
+            return null;
+        }
+
+        if ($user->hasAnyRole([UserRole::ADMIN->value, UserRole::SUPER_ADMIN->value])) {
+            return null;
+        }
+
+        if ($user->hasRole(UserRole::ORGANIZER_MANAGER->value)) {
+            return $user->organizer?->id ?? '__none__';
+        }
+
+        return null;
+    }
+
+    /**
      * L'utilisateur derrière la requête, jeton porteur compris.
      *
      * `$request->user()` ne suffit pas : les routes du catalogue sont publiques,
@@ -77,6 +114,18 @@ final class CatalogueAudience
             return 'guest';
         }
 
-        return self::seesEverything($user) ? 'staff' : 'participant';
+        if ($user->hasAnyRole([UserRole::ADMIN->value, UserRole::SUPER_ADMIN->value])) {
+            return 'staff';
+        }
+
+        // Chaque organisateur a sa propre tranche de cache : la liste du
+        // catalogue est désormais bornée à ses événements (voir
+        // {@see scopedOrganizerId()}), et deux organisateurs qui partageraient la
+        // tranche « staff » se seraient servi l'un à l'autre leurs listes.
+        if ($user->hasRole(UserRole::ORGANIZER_MANAGER->value)) {
+            return 'organizer:'.($user->organizer?->id ?? 'none');
+        }
+
+        return 'participant';
     }
 }

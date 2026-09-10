@@ -22,6 +22,7 @@ use App\Http\Requests\V1\Event\StoreEventRequest;
 use App\Http\Requests\V1\Event\UpdateEventRequest;
 use App\Http\Resources\V1\EventResource;
 use App\Models\Event;
+use App\Models\Organizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -125,6 +126,17 @@ final class EventController extends Controller
             });
 
             $this->hidePastEvents($query);
+        }
+
+        // Cloisonnement du back-office : un organisateur ne voit que ses propres
+        // événements, quel que soit le filtre `organizer_id` qu'il envoie. Sans
+        // cette borne, `screen.events` lui ouvrait tout le catalogue des
+        // confrères. L'administration, elle, n'est pas bornée (voir
+        // {@see CatalogueAudience::scopedOrganizerId()}).
+        $scopedOrganizerId = CatalogueAudience::scopedOrganizerId($request);
+
+        if ($scopedOrganizerId !== null) {
+            $query->where('organizer_id', $scopedOrganizerId);
         }
 
         if ($request->filled('status')) {
@@ -331,6 +343,12 @@ final class EventController extends Controller
         /** @var array{organizer_id: string, category_id: string, venue_id?: string|null, title: string, slug: string, description: string, banner?: UploadedFile|null, start_date: string, end_date: string, max_attendees?: int|null, is_featured?: bool, location_type?: string} $validated */
         $validated = $request->validated();
 
+        // Un organisateur ne crée que pour lui-même : la policy confronte le
+        // compte au propriétaire de l'organisateur ciblé. L'administration passe
+        // (bypass). Sans cela, la route n'exigeait qu'un jeton — n'importe quel
+        // compte connecté pouvait créer un événement au nom d'un organisateur.
+        $this->authorize('create', [Event::class, Organizer::find($validated['organizer_id'])]);
+
         $event = $action->execute($validated);
 
         ResourceChangedEvent::dispatch('events', 'created', $event->id, $event->title);
@@ -378,6 +396,15 @@ final class EventController extends Controller
             abort(404);
         }
 
+        // Un organisateur n'ouvre pas la fiche d'un confrère par son URL : la
+        // page d'édition du back-office s'appuie sur cette même route, et 404 —
+        // « pas visible ici » — n'a pas à révéler que l'événement existe.
+        $scopedOrganizerId = CatalogueAudience::scopedOrganizerId($request);
+
+        if ($scopedOrganizerId !== null && (string) $id->organizer_id !== $scopedOrganizerId) {
+            abort(404);
+        }
+
         // Cached like the listing, and for the same short window: an event page
         // is the most-hit URL on the site once a link circulates, and its five
         // eager-loaded relations make it the most expensive to build. 60s keeps
@@ -418,6 +445,8 @@ final class EventController extends Controller
      */
     public function update(UpdateEventRequest $request, Event $id, UpdateEventAction $action): JsonResponse
     {
+        $this->authorize('update', $id);
+
         /** @var array{category_id?: string, venue_id?: string|null, title?: string, slug?: string, description?: string, banner?: UploadedFile|null, start_date?: string, end_date?: string, max_attendees?: int|null, is_featured?: bool, location_type?: string} $validated */
         $validated = $request->validated();
 
@@ -446,6 +475,8 @@ final class EventController extends Controller
      */
     public function destroy(Event $id, DeleteEventAction $action): JsonResponse
     {
+        $this->authorize('delete', $id);
+
         $eventId = $id->id;
         $action->execute(['event' => $id]);
 
@@ -473,6 +504,8 @@ final class EventController extends Controller
      */
     public function publish(Event $id, PublishEventAction $action): JsonResponse
     {
+        $this->authorize('update', $id);
+
         try {
             $published = $action->execute(['event' => $id]);
 
@@ -502,6 +535,8 @@ final class EventController extends Controller
      */
     public function unpublish(Event $id): JsonResponse
     {
+        $this->authorize('update', $id);
+
         $id->update(['status' => EventStatus::DRAFT]);
 
         ResourceChangedEvent::dispatch('events', 'updated', $id->id, $id->title);
@@ -527,6 +562,8 @@ final class EventController extends Controller
      */
     public function cancel(Event $id): JsonResponse
     {
+        $this->authorize('update', $id);
+
         $id->update(['status' => EventStatus::CANCELLED]);
 
         ResourceChangedEvent::dispatch('events', 'updated', $id->id, $id->title);
