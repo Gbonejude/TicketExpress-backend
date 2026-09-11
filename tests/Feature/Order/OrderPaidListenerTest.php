@@ -121,16 +121,30 @@ it('continues the sequence past the numbers already taken', function (): void {
     $order = paidOrderAwaitingTickets();
     $year = now()->year;
 
-    // Un billet du même préfixe existe déjà : la séquence est commune au
-    // préfixe, pas à l'événement, et deux titres peuvent le partager.
+    // Un billet du même préfixe existe déjà, sur une AUTRE commande : la séquence
+    // est commune au préfixe, pas à l'événement ni à la commande. (Sur la même
+    // commande, la garde d'idempotence du listener sauterait, à raison.)
     Ticket::factory()
-        ->for($order)
+        ->for(Order::factory()->create())
         ->for(TicketType::factory()->for(Event::factory())->create())
         ->create(['ticket_number' => TicketNumber::format('AFRO', $year, 1)]);
 
     runOrderPaidListener($order);
 
     expect(Ticket::query()->where('ticket_number', "AFRO-{$year}-0002")->exists())->toBeTrue();
+});
+
+it('does not re-issue tickets when the order already has some', function (): void {
+    $order = paidOrderAwaitingTickets();
+
+    runOrderPaidListener($order);
+    $issued = $order->tickets()->count();
+    expect($issued)->toBeGreaterThan(0);
+
+    // Rejouer l'événement (callback re-livré, job resté en file) ne double pas.
+    runOrderPaidListener($order);
+
+    expect($order->tickets()->count())->toBe($issued);
 });
 
 it('gives every ticket an unpredictable qr payload', function (): void {

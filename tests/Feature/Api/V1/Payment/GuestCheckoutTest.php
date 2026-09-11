@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Enums\DeliveryMethod;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Models\Order;
+use App\Models\Payment;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -37,7 +39,7 @@ it('creates a pending payment without requiring an existing transaction referenc
         'delivery_method' => DeliveryMethod::EMAIL,
     ]);
 
-    $this->postJson('/api/v1/payments/initiate', [
+    $response = $this->postJson('/api/v1/payments/initiate', [
         'order_id' => $order->id,
         'phone_number' => '+22890123456',
         'network' => 'TMONEY',
@@ -46,10 +48,38 @@ it('creates a pending payment without requiring an existing transaction referenc
         ->assertJsonPath('data.status', 'pending')
         ->assertJsonPath('data.txReference', 'TXN-123456');
 
+    // `id` doit être présent : c'est la clé que le checkout lit pour sonder
+    // ensuite `payments/{id}/status`.
+    expect($response->json('data.id'))->not->toBeNull()
+        ->toBe($response->json('data.paymentId'));
+
     $this->assertDatabaseHas('payments', [
         'order_id' => $order->id,
         'amount' => '2000.00',
         'method' => 'tmoney',
         'transaction_reference' => 'TXN-123456',
     ]);
+});
+
+it('exposes a checkout-friendly status the front can poll to success', function (): void {
+    config(['services.paygate.base_url' => 'https://paygate.test']);
+    Http::fake([
+        '*/api/v1/status' => Http::response(['status' => 0, 'datetime' => now()->toDateTimeString()]),
+        '*/api/v2/status' => Http::response(['status' => 0]),
+    ]);
+
+    $order = Order::factory()->create(['status' => OrderStatus::PENDING]);
+    $payment = Payment::factory()->create([
+        'order_id' => $order->id,
+        'status' => PaymentStatus::NON_PAYE,
+        'transaction_reference' => 'TXN-1',
+        'paid_at' => null,
+    ]);
+
+    $this->getJson("/api/v1/payments/{$payment->id}/status")
+        ->assertOk()
+        ->assertJsonPath('data.id', $payment->id)
+        ->assertJsonPath('data.status', 'success');
+
+    expect($order->fresh()->status)->toBe(OrderStatus::PAID);
 });

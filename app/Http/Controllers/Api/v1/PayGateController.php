@@ -80,6 +80,10 @@ final class PayGateController extends Controller
         $payment->update(['transaction_reference' => $result['tx_reference'] ?? null]);
 
         return $this->success([
+            // `id` (et non `paymentId`) : c'est cette clé que le front lit pour
+            // sonder ensuite `payments/{id}/status`. Sans elle, il sondait
+            // `payments/undefined/status` et le bouton tournait deux minutes.
+            'id' => $payment->id,
             'paymentId' => $payment->id,
             'txReference' => $result['tx_reference'] ?? null,
             'status' => 'pending',
@@ -156,11 +160,35 @@ final class PayGateController extends Controller
             $this->markPaid->execute(['payment' => $payment, 'datetime' => $status['datetime'] ?? null]);
         }
 
+        // `id` + `status` au niveau haut, dans le vocabulaire du front public
+        // (pending/success/failed/cancelled) : c'est ce que le checkout lit pour
+        // décider quand arrêter de sonder. La ressource `payment` (avec son
+        // statut backend `paye`/`non_paye`) et `paygateStatus` restent pour le
+        // back-office.
         return $this->success([
+            'id' => $payment->id,
+            'status' => $this->checkoutStatus($code),
             'payment' => new PaymentResource($payment->fresh()->load('order')),
             'paygateStatus' => $code,
             'paygateStatusLabel' => $this->paymentStatusLabel($code),
         ]);
+    }
+
+    /**
+     * Le statut d'un paiement dans le vocabulaire du site public.
+     *
+     * Le checkout sonde tant que c'est `pending` et conclut sur `success` /
+     * `failed` / `cancelled`. Tout code inconnu reste `pending` : mieux vaut
+     * continuer à sonder qu'annoncer à tort un échec.
+     */
+    private function checkoutStatus(int $code): string
+    {
+        return match ($code) {
+            PayGateService::PAYMENT_SUCCESS => 'success',
+            PayGateService::PAYMENT_EXPIRED => 'failed',
+            PayGateService::PAYMENT_CANCELLED => 'cancelled',
+            default => 'pending',
+        };
     }
 
     /**
