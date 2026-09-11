@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Requests\V1\Coupon;
 
 use App\Enums\CouponType;
+use App\Models\Coupon;
 use App\Rules\NoXssRule;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,6 +17,34 @@ final class UpdateCouponRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Une date de fin qu'on CHANGE doit être dans le futur ; inchangée, elle est
+     * tolérée (on corrige le code d'un coupon expiré sans le reprogrammer).
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if (! $this->filled('end_date')) {
+                return;
+            }
+
+            $coupon = $this->route('id');
+            $newEnd = $this->date('end_date');
+
+            if (! $coupon instanceof Coupon || $newEnd === null) {
+                return;
+            }
+
+            $current = $coupon->end_date;
+            $unchanged = $current !== null
+                && $current->format('Y-m-d H:i') === $newEnd->format('Y-m-d H:i');
+
+            if (! $unchanged && $newEnd->isPast()) {
+                $validator->errors()->add('end_date', 'La date de fin doit être dans le futur.');
+            }
+        });
     }
 
     /**
