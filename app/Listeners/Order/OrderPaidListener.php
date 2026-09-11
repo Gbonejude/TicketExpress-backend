@@ -16,9 +16,7 @@ use App\Models\TicketDownloadLink;
 use App\Services\TicketDownloadService;
 use App\Support\TicketNumber;
 use Exception;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use ReflectionClass;
@@ -26,15 +24,16 @@ use ReflectionClass;
 /**
  * Listener for OrderPaidEvent.
  * Generates tickets, sends email with QR codes, and updates statistics.
+ *
+ * **Synchrone à dessein** (n'implémente PAS ShouldQueue) : l'émission des billets
+ * doit exister dès que la commande est payée, sinon « Mes billets » reste vide
+ * tant qu'un worker n'a pas traité la file. C'était la panne récurrente — le
+ * worker n'écoutait pas la file `notifications`. Le travail lourd (e-mail) reste
+ * asynchrone : il part via `SendEmailJob::dispatch`. Créer les billets et le lien
+ * de téléchargement est rapide et se fait ici, dans la foulée du paiement.
  */
-final class OrderPaidListener implements ShouldQueue
+final class OrderPaidListener
 {
-    use InteractsWithQueue;
-
-    /**
-     * The name of the queue the job should be sent to.
-     */
-    public string $queue = 'notifications';
 
     /**
      * Handle the event.
@@ -60,6 +59,14 @@ final class OrderPaidListener implements ShouldQueue
             ]);
 
             $order->load(['items.ticketType.event', 'tickets']);
+
+            // Idempotent : si les billets sont déjà émis, on ne recommence pas.
+            // Un même paiement peut rejouer l'événement (callback re-livré, job
+            // resté en file d'une ancienne version, réconciliation manuelle) —
+            // sans cette garde, chaque rejeu doublerait les billets.
+            if ($order->tickets->isNotEmpty()) {
+                return;
+            }
 
             // Generate tickets for each order item.
             //
