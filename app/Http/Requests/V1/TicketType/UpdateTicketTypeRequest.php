@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\V1\TicketType;
 
+use App\Models\TicketType;
+use App\Support\TicketDateWindow;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class UpdateTicketTypeRequest extends FormRequest
 {
@@ -14,13 +18,44 @@ final class UpdateTicketTypeRequest extends FormRequest
     }
 
     /**
+     * Même emboîtement qu'à la création, mais tolérant à l'inchangé : une date
+     * absente de la requête garde sa valeur en base, sinon modifier le seul
+     * prix reviendrait à revalider — et parfois refuser — des dates qu'on n'a
+     * pas touchées.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $current = $this->route('id');
+            $current = $current instanceof TicketType ? $current : null;
+
+            $keep = fn (string $field, ?string $attr) => $this->filled($field)
+                ? $this->date($field)
+                : $current?->{$attr};
+
+            TicketDateWindow::check($validator, $this->route('event'), [
+                'sale_start' => $keep('sale_start_date', 'sale_start_date'),
+                'sale_end' => $keep('sale_end_date', 'sale_end_date'),
+                'promo_start' => $keep('promotion_start_date', 'promotion_start_date'),
+                'promo_end' => $keep('promotion_end_date', 'promotion_end_date'),
+            ]);
+        });
+    }
+
+    /**
      * @return array<string, array<int, string>>
      */
     public function rules(): array
     {
         return [
             'occurrence_id' => ['nullable', 'string', 'exists:event_occurrences,id'],
-            'name' => ['sometimes', 'string', 'max:255'],
+            // Nom unique au sein de l'événement, le billet courant excepté.
+            'name' => [
+                'sometimes', 'string', 'max:255',
+                Rule::unique('ticket_types', 'name')
+                    ->where('event_id', $this->route('event')?->id)
+                    ->ignore($this->route('id')),
+            ],
             'description' => ['nullable', 'string'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'quantity' => ['sometimes', 'integer', 'min:1'],
@@ -44,6 +79,7 @@ final class UpdateTicketTypeRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'name.unique' => 'Un type de billet porte déjà ce nom pour cet événement.',
             'price.min' => 'Le prix doit être positif.',
             'quantity.min' => 'La quantité doit être au moins 1.',
             'sale_end_date.after' => 'La date de fin doit être après la date de début.',

@@ -6,8 +6,10 @@ namespace App\Http\Requests\V1\Event;
 
 use App\Enums\EventStatus;
 use App\Enums\EventType;
+use App\Models\Event;
 use App\Rules\NoXssRule;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,6 +18,36 @@ final class UpdateEventRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Une date de début qu'on CHANGE doit être dans le futur ; une date
+     * inchangée est tolérée. Sans cette nuance, un `after:now` déclaratif
+     * refuserait toute modification d'un événement déjà commencé — le formulaire
+     * renvoie la date de début à chaque enregistrement, fût-elle passée.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if (! $this->filled('start_date')) {
+                return;
+            }
+
+            $event = $this->route('id');
+            $newStart = $this->date('start_date');
+
+            if (! $event instanceof Event || $newStart === null) {
+                return;
+            }
+
+            $current = $event->start_date;
+            $unchanged = $current !== null
+                && $current->format('Y-m-d H:i') === $newStart->format('Y-m-d H:i');
+
+            if (! $unchanged && $newStart->isPast()) {
+                $validator->errors()->add('start_date', 'La date et l\'heure de début doivent être dans le futur.');
+            }
+        });
     }
 
     /**
