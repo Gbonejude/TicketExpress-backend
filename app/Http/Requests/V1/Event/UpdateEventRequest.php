@@ -93,6 +93,7 @@ final class UpdateEventRequest extends FormRequest
         return [
             'slug.unique' => 'Ce slug est déjà utilisé.',
             'end_date.after' => 'La date de fin doit être après la date de début.',
+            'max_attendees.min' => 'Le nombre maximum de participants doit être au moins 1.',
         ];
     }
 

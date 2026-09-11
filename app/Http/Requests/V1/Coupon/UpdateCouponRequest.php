@@ -6,6 +6,7 @@ namespace App\Http\Requests\V1\Coupon;
 
 use App\Enums\CouponType;
 use App\Models\Coupon;
+use App\Models\Event;
 use App\Rules\NoXssRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
@@ -44,6 +45,16 @@ final class UpdateCouponRequest extends FormRequest
             if (! $unchanged && $newEnd->isPast()) {
                 $validator->errors()->add('end_date', 'La date de fin doit être dans le futur.');
             }
+
+            // La validité ne dépasse pas la fin de l'événement visé — celui
+            // envoyé si présent, sinon celui déjà rattaché au coupon.
+            $event = $this->filled('event_ids')
+                ? Event::find($this->input('event_ids.0'))
+                : $coupon->events->first();
+
+            if ($event?->end_date !== null && $newEnd->gt($event->end_date)) {
+                $validator->errors()->add('end_date', 'La date de fin ne peut pas dépasser la fin de l\'événement (le '.$event->end_date->format('d/m/Y H:i').').');
+            }
         });
     }
 
@@ -67,8 +78,8 @@ final class UpdateCouponRequest extends FormRequest
             'max_usage' => ['sometimes', 'integer', 'min:1'],
             'start_date' => ['sometimes', 'date'],
             'end_date' => ['sometimes', 'date', 'after_or_equal:start_date'],
-            'event_ids' => ['nullable', 'array'],
-            'event_ids.*' => ['required_with:event_ids', 'string', Rule::exists('events', 'id')],
+            'event_ids' => ['sometimes', 'array', 'size:1'],
+            'event_ids.*' => ['string', Rule::exists('events', 'id')],
         ];
     }
 

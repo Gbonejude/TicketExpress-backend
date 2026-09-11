@@ -70,6 +70,7 @@ final class StoreEventRequest extends FormRequest
             'start_date.after' => 'La date et l\'heure de début doivent être dans le futur.',
             'end_date.required' => 'La date de fin est requise.',
             'end_date.after' => 'La date de fin doit être après la date de début.',
+            'max_attendees.min' => 'Le nombre maximum de participants doit être au moins 1.',
             'ticket_types.min' => 'Au moins un type de ticket est requis.',
         ];
     }

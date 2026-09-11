@@ -57,7 +57,7 @@ final class UpdateTicketTypeRequest extends FormRequest
                     ->ignore($this->route('id')),
             ],
             'description' => ['nullable', 'string'],
-            'price' => ['sometimes', 'numeric', 'min:0'],
+            'price' => ['sometimes', 'numeric', 'gt:0'],
             'quantity' => ['sometimes', 'integer', 'min:1'],
             'sale_start_date' => ['nullable', 'date'],
             'sale_end_date' => ['nullable', 'date', 'after:sale_start_date'],
@@ -80,7 +80,7 @@ final class UpdateTicketTypeRequest extends FormRequest
     {
         return [
             'name.unique' => 'Un type de billet porte déjà ce nom pour cet événement.',
-            'price.min' => 'Le prix doit être positif.',
+            'price.gt' => 'Le prix doit être supérieur à 0.',
             'quantity.min' => 'La quantité doit être au moins 1.',
             'sale_end_date.after' => 'La date de fin doit être après la date de début.',
             'promotional_price.lt' => 'Le prix promotionnel doit être inférieur au prix normal.',
