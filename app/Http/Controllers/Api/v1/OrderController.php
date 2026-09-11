@@ -74,6 +74,9 @@ final class OrderController extends Controller
                 'items.ticketType.event.venue',
                 'tickets.ticketType.event.venue',
                 'downloadLink',
+                // La référence de transaction rapproche le SMS PayGate
+                // (« Ref: … ») de la commande, côté client comme back-office.
+                'payments',
                 // Pour le portrait du participant dans la liste du back-office.
                 // Null sur un achat invité, que la vue sait afficher.
                 'user',

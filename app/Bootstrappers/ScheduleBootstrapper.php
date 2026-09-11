@@ -30,6 +30,15 @@ final class ScheduleBootstrapper
             ->withoutOverlapping()
             ->runInBackground();
 
+        // Rattraper les paiements dont le callback n'est jamais arrivé : on
+        // interroge PayGate et on émet les billets des commandes réellement
+        // payées. Placé AVANT l'annulation, et à la minute : un paiement réussi
+        // est réconcilié bien avant que ses places ne soient rendues au stock.
+        $schedule->command('payments:reconcile-pending')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->runInBackground();
+
         // Une commande non payée retient ses places : le stock est engagé dès la
         // création, sinon deux acheteurs se disputeraient le même siège pendant
         // qu'ils règlent. À la minute, et non à l'heure : le délai accordé est de

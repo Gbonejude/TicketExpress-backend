@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\OrderStatus;
+use App\Actions\V1\Payment\MarkPaymentPaidAction;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
@@ -23,7 +23,10 @@ use Illuminate\Support\Facades\Log;
  */
 final class PayGateController extends Controller
 {
-    public function __construct(private readonly PayGateService $payGate) {}
+    public function __construct(
+        private readonly PayGateService $payGate,
+        private readonly MarkPaymentPaidAction $markPaid,
+    ) {}
 
     /**
      * Initiate a mobile-money payment
@@ -126,7 +129,7 @@ final class PayGateController extends Controller
             : $this->payGate->statusByIdentifier($payment->id);
 
         if ((int) ($status['status'] ?? -1) === PayGateService::PAYMENT_SUCCESS) {
-            $this->markPaid($payment, $request->input('datetime'));
+            $this->markPaid->execute(['payment' => $payment, 'datetime' => $request->input('datetime')]);
         }
 
         return response()->json(['message' => 'ok'], 200);
@@ -150,7 +153,7 @@ final class PayGateController extends Controller
         $code = (int) ($status['status'] ?? -1);
 
         if ($code === PayGateService::PAYMENT_SUCCESS) {
-            $this->markPaid($payment, $status['datetime'] ?? null);
+            $this->markPaid->execute(['payment' => $payment, 'datetime' => $status['datetime'] ?? null]);
         }
 
         return $this->success([
@@ -169,56 +172,6 @@ final class PayGateController extends Controller
     public function balance(): JsonResponse
     {
         return $this->success($this->payGate->balance());
-    }
-
-    private function markPaid(Payment $payment, ?string $datetime): void
-    {
-        if ($payment->status === PaymentStatus::PAYE) {
-            return;
-        }
-
-        $paidAt = $datetime !== null && $datetime !== '' ? $datetime : now();
-
-        $payment->update([
-            'status' => PaymentStatus::PAYE,
-            'paid_at' => $paidAt,
-        ]);
-
-        $order = $payment->order;
-
-        // Le paiement est enregistré — l'argent est bien arrivé — mais une
-        // commande annulée ne repasse pas à « payée » toute seule.
-        //
-        // Ses places ont été rendues au stock par l'annulation (voir
-        // CancelUnpaidOrdersCommand) et ont pu être revendues depuis : la remettre
-        // à « payée » émettrait des billets pour des sièges qui n'existent plus.
-        // Entre vendre deux fois la même place et faire traiter un remboursement
-        // par un humain, c'est le remboursement qui se répare.
-        //
-        // La trace est en `error` pour qu'elle remonte : il y a de l'argent
-        // encaissé sans contrepartie, et personne ne le verra dans une ligne
-        // d'information.
-        if ($order !== null && $order->status === OrderStatus::CANCELLED) {
-            Log::error('Paiement reçu sur une commande annulée — remboursement à traiter', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'payment_id' => $payment->id,
-                'amount' => $payment->amount,
-            ]);
-
-            \App\Events\ResourceChangedEvent::dispatch('payments', 'paid', $payment->id);
-
-            return;
-        }
-
-        $order?->update([
-            'status' => OrderStatus::PAID,
-            'paid_at' => $paidAt,
-        ]);
-
-        // Silent real-time refresh for the back-office lists.
-        \App\Events\ResourceChangedEvent::dispatch('payments', 'paid', $payment->id);
-        \App\Events\ResourceChangedEvent::dispatch('orders', 'paid', $payment->order_id);
     }
 
     private function payInitError(int $code): string
