@@ -7,6 +7,7 @@ namespace App\Http\Requests\V1\Coupon;
 use App\Enums\CouponType;
 use App\Rules\NoXssRule;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,6 +16,22 @@ final class StoreCouponRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Un coupon doit être valable dans le futur : le créer déjà expiré n'a pas
+     * de sens. `after:start_date` reste déclaratif ; « fin dans le futur » vit
+     * ici pour ne pas heurter la clé de message `end_date.after` déjà prise.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $end = $this->date('end_date');
+
+            if ($end !== null && $end->isPast()) {
+                $validator->errors()->add('end_date', 'La date de fin doit être dans le futur : un coupon déjà expiré ne sert à rien.');
+            }
+        });
     }
 
     /**
@@ -27,7 +44,7 @@ final class StoreCouponRequest extends FormRequest
             'type' => ['required', 'string', Rule::enum(CouponType::class)],
             'value' => ['required', 'numeric', 'min:0'],
             'max_usage' => ['required', 'integer', 'min:1'],
-            'start_date' => ['required', 'date'],
+            'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['required', 'date', 'after:start_date'],
             'event_ids' => ['nullable', 'array'],
             'event_ids.*' => ['required_with:event_ids', 'string', Rule::exists('events', 'id')],
@@ -47,6 +64,7 @@ final class StoreCouponRequest extends FormRequest
             'value.min' => 'La valeur doit être positive.',
             'max_usage.required' => 'Le nombre maximum d\'utilisations est requis.',
             'start_date.required' => 'La date de début est requise.',
+            'start_date.after_or_equal' => 'La date de début ne peut pas être dans le passé.',
             'end_date.required' => 'La date de fin est requise.',
             'end_date.after' => 'La date de fin doit être après la date de début.',
         ];
