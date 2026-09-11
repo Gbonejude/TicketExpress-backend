@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Actions\V1\Auth\AdminLoginAction;
+use App\Actions\V1\Order\LinkGuestOrdersToUserAction;
 use App\Actions\V1\Auth\ForgotPasswordAction;
 use App\Actions\V1\Auth\IssueTokenAction;
 use App\Actions\V1\Auth\LoginAction;
@@ -147,10 +148,14 @@ final class AuthController extends Controller
         CompleteRegistrationRequest $request,
         RegisterUserAction $registerUser,
         IssueTokenAction $issueToken,
+        LinkGuestOrdersToUserAction $linkGuestOrders,
     ): JsonResponse {
         /** @var array{phone: string, first_name: string, last_name: string, email?: string|null, address?: string|null, birthday?: string|null, gender?: string|null, image?: UploadedFile|null} $data */
         $data = $request->validated();
         $user = $registerUser->execute($data);
+
+        // Un compte créé après un achat invité récupère ses commandes.
+        $linkGuestOrders->execute(['user' => $user]);
 
         $token = $issueToken->execute([
             'user' => $user,
@@ -197,10 +202,15 @@ final class AuthController extends Controller
         LoginRequest $request,
         LoginAction $login,
         IssueTokenAction $issueToken,
+        LinkGuestOrdersToUserAction $linkGuestOrders,
     ): JsonResponse {
         /** @var array{email: string, password: string} $credentials */
         $credentials = $request->validated();
         $user = $login->execute($credentials);
+
+        // Se connecter récupère les achats faits en invité avec les mêmes
+        // coordonnées (e-mail ou téléphone).
+        $linkGuestOrders->execute(['user' => $user]);
 
         $token = $issueToken->execute([
             'user' => $user,
@@ -293,10 +303,14 @@ final class AuthController extends Controller
         RegisterClientRequest $request,
         RegisterClientAction $action,
         IssueTokenAction $issueToken,
+        LinkGuestOrdersToUserAction $linkGuestOrders,
     ): JsonResponse {
         /** @var array{first_name: string, last_name: string, email: string, phone: string, password: string} $data */
         $data = $request->validated();
         $user = $action->execute($data);
+
+        // Un compte créé après un achat invité récupère ses commandes.
+        $linkGuestOrders->execute(['user' => $user]);
 
         // Signing up already proves the credentials, so a token is issued here.
         // Without it the client would have to submit a login form immediately
