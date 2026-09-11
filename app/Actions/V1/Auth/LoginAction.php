@@ -29,7 +29,7 @@ final class LoginAction implements Action
         // A single message for both branches: telling the caller that an email
         // exists but the password is wrong would confirm registered addresses.
         if (! $user || ! Hash::check($data['password'], $user->password)) {
-            throw new ApiException('Invalid credentials.', 401);
+            throw new ApiException('E-mail ou mot de passe incorrect.', 401);
         }
 
         return $user;
