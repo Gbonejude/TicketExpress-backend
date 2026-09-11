@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\V1\TicketType;
 
+use App\Support\TicketDateWindow;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class StoreTicketTypeRequest extends FormRequest
 {
@@ -14,13 +17,34 @@ final class StoreTicketTypeRequest extends FormRequest
     }
 
     /**
+     * Emboîtement des fenêtres : événement ⊇ vente ⊇ promotion. L'événement est
+     * porté par la route (`/events/{event}/ticket-types`).
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            TicketDateWindow::check($validator, $this->route('event'), [
+                'sale_start' => $this->date('sale_start_date'),
+                'sale_end' => $this->date('sale_end_date'),
+                'promo_start' => $this->date('promotion_start_date'),
+                'promo_end' => $this->date('promotion_end_date'),
+            ]);
+        });
+    }
+
+    /**
      * @return array<string, array<int, string>>
      */
     public function rules(): array
     {
         return [
             'occurrence_id' => ['nullable', 'string', 'exists:event_occurrences,id'],
-            'name' => ['required', 'string', 'max:255'],
+            // Nom unique au sein de l'événement : deux « VIP » sur la même
+            // affiche prêtent à confusion à la billetterie comme au guichet.
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('ticket_types', 'name')->where('event_id', $this->route('event')?->id),
+            ],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'quantity' => ['required', 'integer', 'min:1'],
@@ -45,6 +69,7 @@ final class StoreTicketTypeRequest extends FormRequest
     {
         return [
             'name.required' => 'Le nom du type de ticket est requis.',
+            'name.unique' => 'Un type de billet porte déjà ce nom pour cet événement.',
             'price.required' => 'Le prix est requis.',
             'price.min' => 'Le prix doit être positif.',
             'quantity.required' => 'La quantité est requise.',

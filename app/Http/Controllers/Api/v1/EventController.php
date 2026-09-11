@@ -121,6 +121,12 @@ final class EventController extends Controller
         // désactivé — alors que la désactivation existe précisément pour les
         // retirer du côté client.
         if (! CatalogueAudience::requestSeesEverything($request)) {
+            // Le site public ne montre QUE des événements publiés : un brouillon
+            // ou un événement annulé n'a rien à faire dans le catalogue que
+            // visitent les gens. Le back-office, lui, voit tous les statuts (il
+            // faut bien pouvoir travailler sur un brouillon).
+            $query->where('status', EventStatus::PUBLISHED->value);
+
             $query->whereHas('organizer', function (Builder $q): void {
                 $q->where('is_active', true);
             });
@@ -255,6 +261,13 @@ final class EventController extends Controller
      */
     private function isHiddenFromPublic(Event $event): bool
     {
+        // Seul un événement publié est visible du public : un brouillon ou un
+        // événement annulé servi par son lien direct contournerait la liste, qui
+        // les cache déjà. Testé en premier, c'est gratuit (déjà sur le modèle).
+        if ($event->status !== EventStatus::PUBLISHED) {
+            return true;
+        }
+
         // La date est déjà sur le modèle, donc gratuite : on la teste d'abord et
         // on sort avant de toucher la base. L'organisateur, lui, coûte une
         // lecture par clé primaire, et seulement pour un événement encore à

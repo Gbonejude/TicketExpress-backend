@@ -67,7 +67,7 @@ final class StoreEventRequest extends FormRequest
             'slug.unique' => 'Ce slug est déjà utilisé.',
             'description.required' => 'La description est requise.',
             'start_date.required' => 'La date de début est requise.',
-            'start_date.after' => 'La date de début doit être dans le futur.',
+            'start_date.after' => 'La date et l\'heure de début doivent être dans le futur.',
             'end_date.required' => 'La date de fin est requise.',
             'end_date.after' => 'La date de fin doit être après la date de début.',
             'ticket_types.min' => 'Au moins un type de ticket est requis.',

@@ -8,10 +8,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\PromotionResource;
 use App\Models\TicketType;
 use App\Support\CatalogueAudience;
+use App\Support\TicketDateWindow;
+use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * @group Promotions
@@ -92,7 +95,7 @@ final class PromotionController extends Controller
     {
         $this->authorize('update', $ticketType);
 
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'promotional_price' => ['required', 'numeric', 'min:0', 'lt:'.$ticketType->price],
             'promotion_start_date' => ['required', 'date'],
             'promotion_end_date' => ['required', 'date', 'after:promotion_start_date'],
@@ -100,6 +103,20 @@ final class PromotionController extends Controller
             'promotional_price.lt' => 'Le prix promotionnel doit être inférieur au prix normal.',
             'promotion_end_date.after' => 'La date de fin doit être après la date de début.',
         ]);
+
+        // La promotion vit dans la fenêtre de vente du billet, elle-même dans la
+        // période de l'événement.
+        $validator->after(function (ValidatorContract $validator) use ($request, $ticketType): void {
+            TicketDateWindow::check($validator, $ticketType->event, [
+                'sale_start' => $ticketType->sale_start_date,
+                'sale_end' => $ticketType->sale_end_date,
+                'promo_start' => $request->date('promotion_start_date'),
+                'promo_end' => $request->date('promotion_end_date'),
+            ]);
+        });
+
+        /** @var array<string, mixed> $validated */
+        $validated = $validator->validate();
 
         $ticketType->update($validated);
 
