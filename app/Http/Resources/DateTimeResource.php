@@ -23,7 +23,11 @@ final class DateTimeResource extends JsonResource
         return [
             'datetime' => $this->toISOString(),
             'humanDiff' => $this->diffForHumans(),
-            'human' => $this->toDayDateTimeString(),
+            // Format français : « ven. 11 sept. 2026, 11h28 ». `toDayDateTimeString()`
+            // rendait un format anglais fixe (« Fri, Sep 11, 2026 11:28 AM »),
+            // insensible à la locale ; `isoFormat` la respecte. `copy()` pour ne pas
+            // altérer l'instance partagée (dont dépend `humanDiff`).
+            'human' => $this->resource->copy()->locale('fr')->isoFormat('ddd D MMM YYYY, HH[h]mm'),
         ];
     }
 }
