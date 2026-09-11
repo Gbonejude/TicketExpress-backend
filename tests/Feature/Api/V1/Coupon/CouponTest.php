@@ -87,6 +87,9 @@ it('rejects coupon that reached usage limit', function (): void {
 });
 
 it('can create coupon with authentication', function (): void {
+    // Un coupon vise désormais exactement un événement, qui borne sa validité.
+    $event = Event::factory()->create(['end_date' => now()->addMonths(6)]);
+
     $payload = [
         'code' => 'NEWCODE',
         'type' => 'percent',
@@ -94,6 +97,7 @@ it('can create coupon with authentication', function (): void {
         'max_usage' => 100,
         'start_date' => now()->toDateTimeString(),
         'end_date' => now()->addMonths(2)->toDateTimeString(),
+        'event_ids' => [$event->id],
     ];
 
     $response = $this->actingAs($this->user)

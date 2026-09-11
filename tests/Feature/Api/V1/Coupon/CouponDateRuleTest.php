@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\UserRole;
 use App\Models\Coupon;
+use App\Models\Event;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,6 +15,13 @@ beforeEach(function (): void {
     $this->seed(RoleSeeder::class);
     $this->admin = User::factory()->create();
     $this->admin->assignRole(UserRole::SUPER_ADMIN->value);
+
+    // Fenêtre large : les dates de coupon des tests tiennent dedans, sauf quand
+    // on les pousse volontairement hors bornes.
+    $this->event = Event::factory()->create([
+        'start_date' => now()->addDay(),
+        'end_date' => now()->addMonths(6),
+    ]);
 });
 
 function couponPayload(array $over = []): array
@@ -25,13 +33,21 @@ function couponPayload(array $over = []): array
         'max_usage' => 100,
         'start_date' => now()->toDateTimeString(),
         'end_date' => now()->addMonth()->toDateTimeString(),
+        'event_ids' => [test()->event->id],
     ], $over);
 }
 
-it('accepts a coupon valid in the future', function (): void {
+it('accepts a coupon valid in the future within its event', function (): void {
     $this->actingAs($this->admin)
         ->postJson('/api/v1/coupons', couponPayload())
         ->assertCreated();
+});
+
+it('requires exactly one event', function (): void {
+    $this->actingAs($this->admin)
+        ->postJson('/api/v1/coupons', couponPayload(['event_ids' => []]))
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('event_ids');
 });
 
 it('refuses a coupon starting in the past', function (): void {
@@ -47,6 +63,15 @@ it('refuses a coupon ending before it starts', function (): void {
     $this->actingAs($this->admin)
         ->postJson('/api/v1/coupons', couponPayload([
             'end_date' => now()->subDay()->toDateTimeString(),
+        ]))
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('end_date');
+});
+
+it('refuses a coupon that stays valid after its event ends', function (): void {
+    $this->actingAs($this->admin)
+        ->postJson('/api/v1/coupons', couponPayload([
+            'end_date' => now()->addMonths(8)->toDateTimeString(),
         ]))
         ->assertStatus(422)
         ->assertJsonValidationErrors('end_date');

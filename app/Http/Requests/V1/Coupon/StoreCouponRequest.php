@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\V1\Coupon;
 
 use App\Enums\CouponType;
+use App\Models\Event;
 use App\Rules\NoXssRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
@@ -31,6 +32,15 @@ final class StoreCouponRequest extends FormRequest
             if ($end !== null && $end->isPast()) {
                 $validator->errors()->add('end_date', 'La date de fin doit être dans le futur : un coupon déjà expiré ne sert à rien.');
             }
+
+            // Le coupon vise un événement : sa validité ne peut pas s'étendre
+            // au-delà de la fin de cet événement (il peut en revanche commencer
+            // avant, pour acheter à l'avance).
+            $event = Event::find($this->input('event_ids.0'));
+
+            if ($event?->end_date !== null && $end !== null && $end->gt($event->end_date)) {
+                $validator->errors()->add('end_date', 'La date de fin ne peut pas dépasser la fin de l\'événement (le '.$event->end_date->format('d/m/Y H:i').').');
+            }
         });
     }
 
@@ -46,8 +56,10 @@ final class StoreCouponRequest extends FormRequest
             'max_usage' => ['required', 'integer', 'min:1'],
             'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['required', 'date', 'after:start_date'],
-            'event_ids' => ['nullable', 'array'],
-            'event_ids.*' => ['required_with:event_ids', 'string', Rule::exists('events', 'id')],
+            // Un coupon vise exactement un événement (c'est lui qui borne ses
+            // dates de validité).
+            'event_ids' => ['required', 'array', 'size:1'],
+            'event_ids.*' => ['string', Rule::exists('events', 'id')],
         ];
     }
 
@@ -65,6 +77,8 @@ final class StoreCouponRequest extends FormRequest
             'max_usage.required' => 'Le nombre maximum d\'utilisations est requis.',
             'start_date.required' => 'La date de début est requise.',
             'start_date.after_or_equal' => 'La date de début ne peut pas être dans le passé.',
+            'event_ids.required' => 'L\'événement est requis.',
+            'event_ids.size' => 'Un coupon vise un seul événement.',
             'end_date.required' => 'La date de fin est requise.',
             'end_date.after' => 'La date de fin doit être après la date de début.',
         ];
