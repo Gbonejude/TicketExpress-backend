@@ -17,7 +17,7 @@
             <h3>Détails du billet :</h3>
             <p><strong>Numéro :</strong> {{ $ticket->ticket_number }}</p>
             <p><strong>Type :</strong> {{ $ticketType->name }}</p>
-            <p><strong>Prix :</strong> {{ number_format($ticketType->price, 0, ',', ' ') }} FCFA</p>
+            <p><strong>Prix :</strong> {{ number_format((float) $ticketType->price, 0, ',', ' ') }} FCFA</p>
             <p><strong>Méthode d'accès :</strong> {{ $accessMethod }}</p>
             
             @if($qrCode)

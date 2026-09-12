@@ -18,7 +18,7 @@
             <ul>
                 <li>Numéro de commande : <strong>{{ $order->order_number }}</strong></li>
                 <li>Nombre de billets : <strong>{{ $ticketsCount }}</strong></li>
-                <li>Montant remboursé : <strong>{{ number_format($refundAmount, 0, ',', ' ') }} FCFA</strong></li>
+                <li>Montant remboursé : <strong>{{ number_format((float) $refundAmount, 0, ',', ' ') }} FCFA</strong></li>
                 <li>Date du remboursement : <strong>{{ $refundDate->format('d/m/Y à H:i') }}</strong></li>
             </ul>
         </div>

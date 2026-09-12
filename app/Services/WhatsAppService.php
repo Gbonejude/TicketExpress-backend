@@ -91,7 +91,9 @@ final class WhatsAppService
         }
 
         $message .= "🎫 *Nombre de tickets:* {$order->tickets->count()}\n";
-        $message .= '💰 *Prix total:* '.number_format($order->total_amount, 0, ',', ' ')." XOF\n\n";
+        // `total_amount` est un décimal casté → chaîne ; `number_format` exige un
+        // float en PHP 8.
+        $message .= '💰 *Prix total:* '.number_format((float) $order->total_amount, 0, ',', ' ')." XOF\n\n";
         $message .= "🔢 *Numéro de commande:* {$order->id}\n\n";
 
         // Add ticket codes
