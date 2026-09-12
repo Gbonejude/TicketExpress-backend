@@ -161,12 +161,12 @@
             <p>
                 Numéro de commande : <strong>{{ $order->order_number }}</strong><br>
                 Nombre de tickets : <strong>{{ $order->tickets->count() }}</strong><br>
-                Montant payé : <strong>{{ number_format($order->total_amount, 0, ',', ' ') }} XOF</strong>
+                Montant payé : <strong>{{ number_format((float) $order->total_amount, 0, ',', ' ') }} XOF</strong>
             </p>
 
             <div class="refund-box">
                 <p><strong>💰 Informations sur le remboursement</strong></p>
-                <p>Montant du remboursement : <strong>{{ number_format($order->total_amount, 0, ',', ' ') }} XOF</strong></p>
+                <p>Montant du remboursement : <strong>{{ number_format((float) $order->total_amount, 0, ',', ' ') }} XOF</strong></p>
                 <p>⏱️ Délai de traitement : <strong>5 à 7 jours ouvrés</strong></p>
                 <p>Le remboursement sera effectué sur le moyen de paiement utilisé lors de l'achat.</p>
             </div>

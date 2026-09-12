@@ -131,7 +131,10 @@ final class TicketPurchaseConfirmationMail extends Mailable implements ShouldQue
         }
 
         $message .= "🎫 *Nombre de tickets:* {$order->tickets->count()}\n";
-        $message .= '💰 *Prix total:* '.number_format($order->total_amount, 0, ',', ' ')." XOF\n\n";
+        // `total_amount` est un décimal casté → chaîne (« 20.00 ») ; `number_format`
+        // exige un float en PHP 8, sinon TypeError et l'e-mail de confirmation
+        // échoue en file. Cast explicite.
+        $message .= '💰 *Prix total:* '.number_format((float) $order->total_amount, 0, ',', ' ')." XOF\n\n";
         $message .= "🔢 *Numéro de commande:* {$order->order_number}\n\n";
         $message .= "Votre ticket PDF a été envoyé par email.\n\n";
         $message .= "Présentez votre QR code à l'entrée.\n\n";

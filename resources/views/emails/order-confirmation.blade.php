@@ -18,14 +18,14 @@
             <ul>
                 <li>Numéro de commande : <strong>{{ $order->order_number }}</strong></li>
                 <li>Date : <strong>{{ $orderDate->format('d/m/Y à H:i') }}</strong></li>
-                <li>Montant total : <strong>{{ number_format($totalAmount, 0, ',', ' ') }} FCFA</strong></li>
+                <li>Montant total : <strong>{{ number_format((float) $totalAmount, 0, ',', ' ') }} FCFA</strong></li>
                 <li>Nombre d'articles : <strong>{{ $items->count() }}</strong></li>
             </ul>
             
             <h4>Articles :</h4>
             <ul>
                 @foreach($items as $item)
-                <li>{{ $item->quantity }} × {{ $item->ticketType->name }} - {{ number_format($item->unit_price, 0, ',', ' ') }} FCFA</li>
+                <li>{{ $item->quantity }} × {{ $item->ticketType->name }} - {{ number_format((float) $item->unit_price, 0, ',', ' ') }} FCFA</li>
                 @endforeach
             </ul>
         </div>

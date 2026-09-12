@@ -190,7 +190,7 @@
             @endif
 
             <div class="total">
-                Total payé: {{ number_format($order->total_amount, 0, ',', ' ') }} XOF
+                Total payé: {{ number_format((float) $order->total_amount, 0, ',', ' ') }} XOF
             </div>
 
             @if($includeWhatsAppLink && $whatsappLink)
