@@ -102,7 +102,7 @@ final class EventCheckInController extends Controller
             );
         }
 
-        ResourceChangedEvent::dispatch('tickets', 'checked-in', $outcome['ticket']->id);
+        ResourceChangedEvent::dispatchQuietly('tickets', 'checked-in', $outcome['ticket']->id);
 
         return $this->success(
             data: $payload,

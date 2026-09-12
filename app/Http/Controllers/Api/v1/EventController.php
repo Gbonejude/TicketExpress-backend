@@ -364,7 +364,7 @@ final class EventController extends Controller
 
         $event = $action->execute($validated);
 
-        ResourceChangedEvent::dispatch('events', 'created', $event->id, $event->title);
+        ResourceChangedEvent::dispatchQuietly('events', 'created', $event->id, $event->title);
 
         return $this->created(new EventResource($event));
     }
@@ -470,7 +470,7 @@ final class EventController extends Controller
 
         $updated = $action->execute($data);
 
-        ResourceChangedEvent::dispatch('events', 'updated', $updated->id, $updated->title);
+        ResourceChangedEvent::dispatchQuietly('events', 'updated', $updated->id, $updated->title);
 
         return $this->success(new EventResource($updated));
     }
@@ -493,7 +493,7 @@ final class EventController extends Controller
         $eventId = $id->id;
         $action->execute(['event' => $id]);
 
-        ResourceChangedEvent::dispatch('events', 'deleted', $eventId);
+        ResourceChangedEvent::dispatchQuietly('events', 'deleted', $eventId);
 
         return $this->noContent();
     }
@@ -522,7 +522,7 @@ final class EventController extends Controller
         try {
             $published = $action->execute(['event' => $id]);
 
-            ResourceChangedEvent::dispatch('events', 'updated', $published->id, $published->title);
+            ResourceChangedEvent::dispatchQuietly('events', 'updated', $published->id, $published->title);
 
             return $this->success(new EventResource($published));
         } catch (\DomainException $e) {
@@ -552,7 +552,7 @@ final class EventController extends Controller
 
         $id->update(['status' => EventStatus::DRAFT]);
 
-        ResourceChangedEvent::dispatch('events', 'updated', $id->id, $id->title);
+        ResourceChangedEvent::dispatchQuietly('events', 'updated', $id->id, $id->title);
 
         return $this->success(
             data: new EventResource($id),
@@ -579,7 +579,7 @@ final class EventController extends Controller
 
         $id->update(['status' => EventStatus::CANCELLED]);
 
-        ResourceChangedEvent::dispatch('events', 'updated', $id->id, $id->title);
+        ResourceChangedEvent::dispatchQuietly('events', 'updated', $id->id, $id->title);
 
         return $this->success(
             data: new EventResource($id),

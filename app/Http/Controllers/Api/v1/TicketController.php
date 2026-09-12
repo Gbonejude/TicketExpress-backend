@@ -142,7 +142,7 @@ final class TicketController extends Controller
                 'checked_in_by' => $request->user()?->id,
             ]);
 
-            \App\Events\ResourceChangedEvent::dispatch('tickets', 'checked-in', $checkedInTicket->id);
+            \App\Events\ResourceChangedEvent::dispatchQuietly('tickets', 'checked-in', $checkedInTicket->id);
 
             return $this->success(
                 data: new TicketResource($checkedInTicket),

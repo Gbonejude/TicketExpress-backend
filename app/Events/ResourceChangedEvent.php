@@ -8,6 +8,8 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Lightweight real-time signal for the back-office. It carries no sensitive
@@ -26,6 +28,25 @@ final class ResourceChangedEvent implements ShouldBroadcastNow
         public ?string $id = null,
         public ?string $label = null,
     ) {}
+
+    /**
+     * Diffuse sans jamais faire échouer l'appelant.
+     *
+     * Comme `ShouldBroadcastNow` diffuse de façon **synchrone**, une panne du
+     * broadcaster (Pusher injoignable : hors-ligne, DNS, clés absentes) lèverait
+     * une `BroadcastException` en pleine requête — et ferait « planter » une
+     * commande ou un paiement pourtant valides (« Paiement non abouti »). Ce
+     * signal n'est qu'un rafraîchissement du back-office : son échec doit être
+     * journalisé puis **ignoré**, jamais propagé. Tous les appels passent par ici.
+     */
+    public static function dispatchQuietly(string $channelName, string $action, ?string $id = null, ?string $label = null): void
+    {
+        try {
+            self::dispatch($channelName, $action, $id, $label);
+        } catch (Throwable $e) {
+            Log::warning('ResourceChangedEvent: diffusion temps réel ignorée ('.$e->getMessage().')');
+        }
+    }
 
     /**
      * @return array<int, Channel>
