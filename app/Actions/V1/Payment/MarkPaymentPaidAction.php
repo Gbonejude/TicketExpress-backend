@@ -62,7 +62,7 @@ final class MarkPaymentPaidAction implements Action
                 'amount' => $payment->amount,
             ]);
 
-            ResourceChangedEvent::dispatch('payments', 'paid', $payment->id);
+            ResourceChangedEvent::dispatchQuietly('payments', 'paid', $payment->id);
 
             return $payment;
         }
@@ -78,8 +78,8 @@ final class MarkPaymentPaidAction implements Action
             OrderPaidEvent::dispatch($order);
         }
 
-        ResourceChangedEvent::dispatch('payments', 'paid', $payment->id);
-        ResourceChangedEvent::dispatch('orders', 'paid', $payment->order_id);
+        ResourceChangedEvent::dispatchQuietly('payments', 'paid', $payment->id);
+        ResourceChangedEvent::dispatchQuietly('orders', 'paid', $payment->order_id);
 
         return $payment;
     }

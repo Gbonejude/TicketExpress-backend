@@ -242,7 +242,7 @@ final class OrganizerController extends Controller
 
         $organizer = $action->execute($data);
 
-        ResourceChangedEvent::dispatch('organizers', 'updated', $organizer->id, $organizer->company_name);
+        ResourceChangedEvent::dispatchQuietly('organizers', 'updated', $organizer->id, $organizer->company_name);
 
         return $this->success(new OrganizerResource($organizer));
     }
@@ -263,7 +263,7 @@ final class OrganizerController extends Controller
         $organizerId = $id->id;
         $action->execute(['organizer' => $id]);
 
-        ResourceChangedEvent::dispatch('organizers', 'deleted', $organizerId);
+        ResourceChangedEvent::dispatchQuietly('organizers', 'deleted', $organizerId);
 
         return $this->noContent();
     }
@@ -291,7 +291,7 @@ final class OrganizerController extends Controller
         // to send it; nothing was dispatching the event, so it never fired.
         OrganizerStatusUpdatedEvent::dispatch($id->fresh()->load('user'));
 
-        ResourceChangedEvent::dispatch('organizers', 'updated', $id->id, $id->company_name);
+        ResourceChangedEvent::dispatchQuietly('organizers', 'updated', $id->id, $id->company_name);
 
         return $this->success(new OrganizerResource($id->load('user')->loadCount('events')));
     }
@@ -320,7 +320,7 @@ final class OrganizerController extends Controller
         // Sends the rejection e-mail, with the reason the administrator gave.
         OrganizerStatusUpdatedEvent::dispatch($id->fresh()->load('user'));
 
-        ResourceChangedEvent::dispatch('organizers', 'updated', $id->id, $id->company_name);
+        ResourceChangedEvent::dispatchQuietly('organizers', 'updated', $id->id, $id->company_name);
 
         return $this->success(new OrganizerResource($id->load('user')->loadCount('events')));
     }
@@ -337,7 +337,7 @@ final class OrganizerController extends Controller
     {
         $id->update(['is_active' => true]);
 
-        ResourceChangedEvent::dispatch('organizers', 'updated', $id->id, $id->company_name);
+        ResourceChangedEvent::dispatchQuietly('organizers', 'updated', $id->id, $id->company_name);
 
         return $this->success(new OrganizerResource($id->load('user')->loadCount('events')));
     }
@@ -354,7 +354,7 @@ final class OrganizerController extends Controller
     {
         $id->update(['is_active' => false]);
 
-        ResourceChangedEvent::dispatch('organizers', 'updated', $id->id, $id->company_name);
+        ResourceChangedEvent::dispatchQuietly('organizers', 'updated', $id->id, $id->company_name);
 
         return $this->success(new OrganizerResource($id->load('user')->loadCount('events')));
     }

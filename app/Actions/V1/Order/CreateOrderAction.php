@@ -160,9 +160,9 @@ final class CreateOrderAction implements Action
 
             // Real-time (silent) refresh signals for the back-office lists.
             DB::afterCommit(function () use ($order): void {
-                \App\Events\ResourceChangedEvent::dispatch('orders', 'created', $order->id);
-                \App\Events\ResourceChangedEvent::dispatch('tickets', 'created', null);
-                \App\Events\ResourceChangedEvent::dispatch('payments', 'created', null);
+                \App\Events\ResourceChangedEvent::dispatchQuietly('orders', 'created', $order->id);
+                \App\Events\ResourceChangedEvent::dispatchQuietly('tickets', 'created', null);
+                \App\Events\ResourceChangedEvent::dispatchQuietly('payments', 'created', null);
             });
 
             return $order;

@@ -85,7 +85,7 @@ final class RegisterOrganizerManagerAction implements Action
 
             // Real-time signal so the back-office organizers list refreshes
             // (with a toast) without a manual reload.
-            DB::afterCommit(fn () => ResourceChangedEvent::dispatch(
+            DB::afterCommit(fn () => ResourceChangedEvent::dispatchQuietly(
                 'organizers',
                 'created',
                 $organizer->id,
