@@ -13,102 +13,66 @@
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            color: #e2e8f0;
+            background: #f5f5f5;
+            color: #333;
             padding: 1.5rem;
         }
 
         .card {
-            max-width: 480px;
+            max-width: 460px;
             width: 100%;
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.25rem;
+            background: #fff;
+            border-radius: 12px;
             padding: 2.5rem 2rem;
             text-align: center;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
 
         .icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1.5rem;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.25rem;
-        }
-
-        .icon--expired {
-            background: rgba(239, 68, 68, 0.15);
-            border: 2px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .icon--limit {
-            background: rgba(251, 191, 36, 0.15);
-            border: 2px solid rgba(251, 191, 36, 0.3);
+            font-size: 3rem;
+            margin-bottom: 1.25rem;
         }
 
         h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
+            font-size: 1.375rem;
+            font-weight: 600;
             margin-bottom: 0.75rem;
-            color: #fff;
+            color: #111;
         }
 
         .description {
-            font-size: 1rem;
+            font-size: 0.9375rem;
             line-height: 1.6;
-            color: #94a3b8;
+            color: #666;
             margin-bottom: 2rem;
         }
 
         .btn {
             display: inline-block;
-            padding: 0.875rem 2rem;
-            border-radius: 0.75rem;
+            padding: 0.75rem 1.75rem;
+            border-radius: 8px;
             font-size: 0.9375rem;
             font-weight: 600;
             text-decoration: none;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .btn--primary {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: #111;
             color: #fff;
-            border: none;
-        }
-
-        .btn--primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35);
         }
 
         .footer {
-            margin-top: 2rem;
+            margin-top: 1.75rem;
             font-size: 0.8125rem;
-            color: #64748b;
+            color: #999;
         }
 
         .footer a {
-            color: #818cf8;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
+            color: #555;
             text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="icon {{ $iconClass ?? 'icon--expired' }}">
-            {{ $icon ?? '⏰' }}
-        </div>
+        <div class="icon">{{ $icon ?? '⏰' }}</div>
 
         <h1>{{ $title ?? 'Lien expiré' }}</h1>
 
@@ -117,8 +81,8 @@
         </p>
 
         @if(!empty($actionUrl))
-            <a href="{{ $actionUrl }}" class="btn btn--primary">
-                {{ $actionLabel ?? 'Retour à l\'accueil' }}
+            <a href="{{ $actionUrl }}" class="btn">
+                {{ $actionLabel ?? "Retour à l'accueil" }}
             </a>
         @endif
 
