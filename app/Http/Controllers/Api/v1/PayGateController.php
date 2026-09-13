@@ -146,6 +146,16 @@ final class PayGateController extends Controller
      */
     public function status(Payment $payment): JsonResponse
     {
+        if ($payment->status === PaymentStatus::PAYE) {
+            return $this->success([
+                'id' => $payment->id,
+                'status' => 'success',
+                'payment' => new PaymentResource($payment->load('order')),
+                'paygateStatus' => PayGateService::PAYMENT_SUCCESS,
+                'paygateStatusLabel' => $this->paymentStatusLabel(PayGateService::PAYMENT_SUCCESS),
+            ]);
+        }
+
         $status = $payment->transaction_reference
             ? $this->payGate->status($payment->transaction_reference)
             : $this->payGate->statusByIdentifier($payment->id);
@@ -154,11 +164,24 @@ final class PayGateController extends Controller
             return $this->error($status['error'], 502);
         }
 
-        $code = (int) ($status['status'] ?? -1);
-
-        if ($code === PayGateService::PAYMENT_SUCCESS) {
-            $this->markPaid->execute(['payment' => $payment, 'datetime' => $status['datetime'] ?? null]);
+        if (empty($payment->transaction_reference) && ! empty($status['tx_reference'])) {
+            $payment->update(['transaction_reference' => (string) $status['tx_reference']]);
         }
+
+        $hasStatus = isset($status['status']);
+        $code = $hasStatus ? (int) $status['status'] : -1;
+        $isPaid = ($hasStatus && $code === PayGateService::PAYMENT_SUCCESS)
+            || (! empty($status['payment_reference']));
+
+        if ($isPaid) {
+            $this->markPaid->execute(['payment' => $payment, 'datetime' => $status['datetime'] ?? null]);
+            $code = PayGateService::PAYMENT_SUCCESS;
+        }
+
+        $freshPayment = $payment->fresh()->load('order');
+        $checkoutStatus = ($freshPayment->status === PaymentStatus::PAYE)
+            ? 'success'
+            : $this->checkoutStatus($code);
 
         // `id` + `status` au niveau haut, dans le vocabulaire du front public
         // (pending/success/failed/cancelled) : c'est ce que le checkout lit pour
@@ -167,8 +190,8 @@ final class PayGateController extends Controller
         // back-office.
         return $this->success([
             'id' => $payment->id,
-            'status' => $this->checkoutStatus($code),
-            'payment' => new PaymentResource($payment->fresh()->load('order')),
+            'status' => $checkoutStatus,
+            'payment' => new PaymentResource($freshPayment),
             'paygateStatus' => $code,
             'paygateStatusLabel' => $this->paymentStatusLabel($code),
         ]);
