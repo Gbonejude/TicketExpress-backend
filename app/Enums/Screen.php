@@ -150,6 +150,7 @@ enum Screen: string
             self::BOOKINGS,
             self::PAYMENTS,
             self::WITHDRAWALS,
+            self::NOTIFICATIONS,
         ];
     }
 }

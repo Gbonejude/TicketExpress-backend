@@ -38,8 +38,8 @@ class TestUsersSeeder extends Seeder
             $superAdmin->assignRole('super-admin');
         }
 
-        // 2. Admin
-        $admin = User::where('email', 'admin@test.tg')->first();
+        // 2. Adminadmin@test.tg
+        $admin = User::where('email', '')->first();
 
         if (! $admin) {
             $admin = User::create([
