@@ -82,16 +82,11 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon $end_date
  * @property int|null $max_attendees
  * @property \App\Enums\EventStatus $status
- * @property \App\Enums\EventType $event_type
- * @property string|null $online_url
- * @property bool $refund_allowed
- * @property int $refund_days_before
- * @property float|null $checkin_open_hours_before
- * @property float|null $checkin_close_hours_after
  * @property string|null $published_at
  * @property string|null $cancelled_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \App\Enums\EventType $event_type
  * @property-read mixed $banner
  * @property-read \App\Models\EventCategory $category
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Coupon> $coupons
@@ -115,19 +110,13 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereCancelledAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereCategoryId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereCheckinCloseHoursAfter($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereCheckinOpenHoursBefore($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereDescription($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereEndDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereEventType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereMaxAttendees($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereOnlineUrl($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereOrganizerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event wherePublishedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereRefundAllowed($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereRefundDaysBefore($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereSlug($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereStartDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Event whereStatus($value)
@@ -337,10 +326,7 @@ namespace App\Models{
  * @property string $company_name
  * @property string|null $description
  * @property string|null $website
- * @property bool $is_active
  * @property string|null $rejection_reason
- * @property float|null $checkin_open_hours_before
- * @property float|null $checkin_close_hours_after
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Event> $events
@@ -354,13 +340,10 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereCheckinCloseHoursAfter($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereCheckinOpenHoursBefore($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereCompanyName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereDescription($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereIsActive($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereRejectionReason($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Organizer whereUpdatedAt($value)
@@ -402,7 +385,7 @@ namespace App\Models{
  * @property string $order_id
  * @property numeric $amount
  * @property \App\Enums\PaymentMethod $method
- * @property string|null $transaction_reference
+ * @property string $transaction_reference
  * @property \App\Enums\PaymentStatus $status
  * @property \Illuminate\Support\Carbon|null $paid_at
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -518,19 +501,9 @@ namespace App\Models{
 /**
  * Simple key/value store for editable platform settings (e.g. commission rate).
  *
- * @property int $id
- * @property string $key
- * @property string|null $value
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Setting newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Setting newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Setting query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Setting whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Setting whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Setting whereKey($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Setting whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Setting whereValue($value)
  */
 	final class Setting extends \Eloquent {}
 }
@@ -761,12 +734,7 @@ namespace App\Models{
  * @property-read WithdrawalStatus $status
  * @property string $id
  * @property string $organizer_id
- * @property string|null $requester_phone
  * @property numeric $amount
- * @property \Illuminate\Support\Carbon|null $processed_at
- * @property string|null $processed_by
- * @property string|null $notes
- * @property string|null $payout_reference
  * @property string $payment_method
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -779,13 +747,8 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereNotes($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereOrganizerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal wherePaymentMethod($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal wherePayoutReference($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereProcessedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereProcessedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereRequesterPhone($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Withdrawal whereUpdatedAt($value)
  */

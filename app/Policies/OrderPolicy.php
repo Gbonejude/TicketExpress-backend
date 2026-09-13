@@ -66,6 +66,7 @@ final class OrderPolicy
 
     private function isOwner(User $user, Order $order): bool
     {
-        return (string) $order->user_id === (string) $user->id;
+        return (string) $order->user_id === (string) $user->id
+            || ($user->email !== null && strtolower((string) $order->email) === strtolower((string) $user->email));
     }
 }
