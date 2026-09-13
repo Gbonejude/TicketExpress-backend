@@ -43,6 +43,30 @@ final class PublishEventActionTest extends TestCase
         $this->assertEquals(EventStatus::PUBLISHED, $publishedEvent->status);
     }
 
+    public function test_prevents_publishing_past_event(): void
+    {
+        $event = Event::factory()->draft()->create([
+            'start_date' => now()->subDays(2),
+            'end_date' => now()->subDays(1),
+        ]);
+        TicketType::factory()->for($event)->create();
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Impossible de publier un événement dont la date et l\'heure sont déjà passées.');
+
+        $this->action->execute(['event' => $event]);
+    }
+
+    public function test_can_republish_cancelled_event(): void
+    {
+        $event = Event::factory()->cancelled()->create();
+        TicketType::factory()->for($event)->create();
+
+        $publishedEvent = $this->action->execute(['event' => $event]);
+
+        $this->assertEquals(EventStatus::PUBLISHED, $publishedEvent->status);
+    }
+
     public function test_prevents_republishing_published_event(): void
     {
         $event = Event::factory()->create([

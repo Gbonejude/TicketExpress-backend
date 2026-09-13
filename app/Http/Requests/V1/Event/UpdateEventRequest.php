@@ -29,23 +29,32 @@ final class UpdateEventRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            if (! $this->filled('start_date')) {
-                return;
-            }
-
             $event = $this->route('id');
-            $newStart = $this->date('start_date');
 
-            if (! $event instanceof Event || $newStart === null) {
-                return;
+            if ($this->filled('start_date')) {
+                $newStart = $this->date('start_date');
+
+                if ($event instanceof Event && $newStart !== null) {
+                    $current = $event->start_date;
+                    $unchanged = $current !== null
+                        && $current->format('Y-m-d H:i') === $newStart->format('Y-m-d H:i');
+
+                    if (! $unchanged && $newStart->isPast()) {
+                        $validator->errors()->add('start_date', 'La date et l\'heure de début doivent être dans le futur.');
+                    }
+                }
             }
 
-            $current = $event->start_date;
-            $unchanged = $current !== null
-                && $current->format('Y-m-d H:i') === $newStart->format('Y-m-d H:i');
+            if ($this->input('status') === EventStatus::PUBLISHED->value && $event instanceof Event) {
+                $start = $this->filled('start_date') ? $this->date('start_date') : $event->start_date;
+                $end = $this->filled('end_date') ? $this->date('end_date') : $event->end_date;
 
-            if (! $unchanged && $newStart->isPast()) {
-                $validator->errors()->add('start_date', 'La date et l\'heure de début doivent être dans le futur.');
+                $isPast = ($start !== null && $start->isPast())
+                    || ($end !== null && $end->isPast());
+
+                if ($isPast) {
+                    $validator->errors()->add('status', 'Impossible de publier un événement dont la date et l\'heure sont déjà passées.');
+                }
             }
         });
     }

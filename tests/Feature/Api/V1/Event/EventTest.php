@@ -126,6 +126,25 @@ it('cannot publish event without ticket types', function (): void {
     expect($response->json('message'))->toContain('types de tickets');
 });
 
+it('cannot publish event whose date is in the past', function (): void {
+    $event = Event::factory()->create([
+        'organizer_id' => $this->organizer->id,
+        'status' => EventStatus::DRAFT,
+        'start_date' => now()->subDays(2),
+        'end_date' => now()->subDays(1),
+    ]);
+
+    TicketType::factory()->for($event)->create(['name' => 'Standard']);
+
+    $response = $this->actingAs($this->user)
+        ->postJson("/api/v1/events/{$event->id}/publish");
+
+    $response->assertStatus(422)
+        ->assertJson(['success' => false]);
+
+    expect($response->json('message'))->toContain('passée');
+});
+
 it('can update event', function (): void {
     $event = Event::factory()->create([
         'organizer_id' => $this->organizer->id,
