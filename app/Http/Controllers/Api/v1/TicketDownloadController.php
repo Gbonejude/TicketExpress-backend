@@ -79,12 +79,12 @@ final class TicketDownloadController extends Controller
 
         // Check expiration
         if ($link->isExpired()) {
-            abort(410, 'Le lien de téléchargement a expiré.');
+            return $this->expiredResponse();
         }
 
         // Check download limit
         if ($link->isLimitReached()) {
-            abort(429, 'Limite de téléchargements atteinte.');
+            return $this->limitReachedResponse();
         }
 
         // Tout ce que le document lit, chargé d'avance : le reçu détaille les
@@ -127,7 +127,7 @@ final class TicketDownloadController extends Controller
 
         // Check expiration
         if ($link->isExpired()) {
-            abort(410, 'Le lien de téléchargement a expiré.');
+            return $this->expiredResponse();
         }
 
         // Find ticket
@@ -158,5 +158,39 @@ final class TicketDownloadController extends Controller
         return response($qrCodeData, 200)
             ->header('Content-Type', 'image/png')
             ->header('Content-Disposition', "inline; filename=\"qr-{$ticket->ticket_number}.png\"");
+    }
+
+    /**
+     * User-friendly response for expired download links.
+     */
+    private function expiredResponse(): Response
+    {
+        $frontendUrl = config('app.frontend_url', config('app.url'));
+
+        return response()->view('errors.download-error', [
+            'title'       => 'Lien expiré',
+            'icon'        => '⏰',
+            'iconClass'   => 'icon--expired',
+            'message'     => 'Ce lien de téléchargement a expiré. Veuillez contacter le support ou demander un nouveau lien depuis votre espace.',
+            'actionUrl'   => $frontendUrl,
+            'actionLabel' => "Retour à l'accueil",
+        ], 410);
+    }
+
+    /**
+     * User-friendly response for download limit reached.
+     */
+    private function limitReachedResponse(): Response
+    {
+        $frontendUrl = config('app.frontend_url', config('app.url'));
+
+        return response()->view('errors.download-error', [
+            'title'       => 'Limite de téléchargements atteinte',
+            'icon'        => '⚠️',
+            'iconClass'   => 'icon--limit',
+            'message'     => "Vous avez atteint le nombre maximum de téléchargements pour ce lien. Veuillez contacter le support si vous avez besoin d'un nouvel accès.",
+            'actionUrl'   => $frontendUrl,
+            'actionLabel' => "Retour à l'accueil",
+        ], 429);
     }
 }
