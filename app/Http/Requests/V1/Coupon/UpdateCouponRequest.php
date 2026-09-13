@@ -27,33 +27,64 @@ final class UpdateCouponRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            if (! $this->filled('end_date')) {
-                return;
-            }
-
             $coupon = $this->route('id');
-            $newEnd = $this->date('end_date');
 
-            if (! $coupon instanceof Coupon || $newEnd === null) {
+            if (! $coupon instanceof Coupon) {
                 return;
             }
 
-            $current = $coupon->end_date;
-            $unchanged = $current !== null
-                && $current->format('Y-m-d H:i') === $newEnd->format('Y-m-d H:i');
+            // ── Validation date de fin ──────────────────────────────────────
+            if ($this->filled('end_date')) {
+                $newEnd = $this->date('end_date');
 
-            if (! $unchanged && $newEnd->isPast()) {
-                $validator->errors()->add('end_date', 'La date de fin doit être dans le futur.');
+                if ($newEnd !== null) {
+                    $current   = $coupon->end_date;
+                    $unchanged = $current !== null
+                        && $current->format('Y-m-d H:i') === $newEnd->format('Y-m-d H:i');
+
+                    if (! $unchanged && $newEnd->isPast()) {
+                        $validator->errors()->add('end_date', 'La date de fin doit être dans le futur.');
+                    }
+
+                    // La validité ne dépasse pas la fin de l'événement visé.
+                    $event = $this->filled('event_ids')
+                        ? Event::find($this->input('event_ids.0'))
+                        : $coupon->events->first();
+
+                    if ($event?->end_date !== null && $newEnd->gt($event->end_date)) {
+                        $validator->errors()->add('end_date', 'La date de fin ne peut pas dépasser la fin de l\'événement (le '.$event->end_date->format('d/m/Y H:i').').');
+                    }
+                }
             }
 
-            // La validité ne dépasse pas la fin de l'événement visé — celui
-            // envoyé si présent, sinon celui déjà rattaché au coupon.
-            $event = $this->filled('event_ids')
-                ? Event::find($this->input('event_ids.0'))
-                : $coupon->events->first();
+            // ── Validation valeur de réduction ─────────────────────────────
+            // S'exécute même si end_date n'est pas envoyé.
+            if ($this->filled('value') || $this->filled('type')) {
+                $type  = $this->filled('type')  ? $this->input('type')          : $coupon->type?->value;
+                $value = $this->filled('value') ? (float) $this->input('value') : (float) $coupon->value;
 
-            if ($event?->end_date !== null && $newEnd->gt($event->end_date)) {
-                $validator->errors()->add('end_date', 'La date de fin ne peut pas dépasser la fin de l\'événement (le '.$event->end_date->format('d/m/Y H:i').').');
+                // Pourcentage plafonné à 100.
+                if ($type === 'percent' && $value > 100) {
+                    $validator->errors()->add('value', 'Un coupon de type pourcentage ne peut pas dépasser 100 %.');
+                }
+
+                // Montant fixe : ne doit pas dépasser le prix minimum des billets.
+                if ($type === 'fixed' && $value > 0) {
+                    $targetEvent = $this->filled('event_ids')
+                        ? Event::find($this->input('event_ids.0'))
+                        : $coupon->events->first();
+
+                    if ($targetEvent !== null) {
+                        $minPrice = $targetEvent->ticketTypes()->min('price');
+
+                        if ($minPrice !== null && $value > (float) $minPrice) {
+                            $validator->errors()->add(
+                                'value',
+                                'Le montant fixe ('.$value.' FCFA) dépasse le prix minimum des billets de cet événement ('.$minPrice.' FCFA). Réduisez la remise.',
+                            );
+                        }
+                    }
+                }
             }
         });
     }
