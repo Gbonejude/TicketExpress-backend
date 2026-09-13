@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @group Orders
@@ -138,9 +139,25 @@ final class OrderController extends Controller
             );
         }
 
+        // Agrégats globaux sur les commandes PAYÉES — calculés AVANT la
+        // pagination pour refléter l'ensemble de l'historique, pas seulement
+        // la page courante. On clone le builder pour conserver tous les
+        // filtres (scope utilisateur, statut, etc.) sans les eager-loads
+        // qui n'ont aucune utilité pour un agrégat.
+        $paidQuery = (clone $query)->withoutEagerLoads()->where('status', 'paid');
+
+        $totalSpent   = (float) (clone $paidQuery)->sum('total_amount');
+        $totalTickets = (int)   \DB::table('tickets')
+            ->whereIn('order_id', (clone $paidQuery)->select('id'))
+            ->count();
+
         $orders = $query->paginate(15);
 
-        return OrderResource::collection($orders);
+        return OrderResource::collection($orders)
+            ->additional(['meta' => [
+                'totalSpent'   => $totalSpent,
+                'totalTickets' => $totalTickets,
+            ]]);
     }
 
     /**
