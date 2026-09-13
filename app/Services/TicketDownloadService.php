@@ -98,7 +98,7 @@ final class TicketDownloadService
 
         $message = $this->generateWhatsAppMessage($order, $downloadUrl);
 
-        return "https://wa.me/{$phone}?text=".urlencode($message);
+        return "https://wa.me/{$phone}?text=".rawurlencode($message);
     }
 
     /**
@@ -111,24 +111,24 @@ final class TicketDownloadService
         $firstItem = $order->items->first();
         $event = $firstItem?->ticketType?->event;
 
-        $message = "🎟️ *TicketExpress - Vos tickets*\n\n";
+        $message = "*TicketExpress - Vos tickets*\n\n";
         $message .= "Bonjour {$order->first_name} !\n\n";
 
         if ($event) {
-            $message .= "📅 *Événement:* {$event->title}\n";
+            $message .= "Evenement : *{$event->title}*\n";
             if ($event->start_date) {
                 $startDate = Carbon::parse($event->start_date);
-                $message .= '🗓️ *Date:* '.$startDate->format('d/m/Y H:i')."\n";
+                $message .= 'Date : *'.$startDate->format('d/m/Y H:i')."*\n";
             }
         }
 
-        $message .= "🎫 *Tickets:* {$order->items->sum('quantity')}\n";
-        $message .= '💰 *Total:* '.number_format((float) $order->total_amount, 0, ',', ' ')." XOF\n\n";
-        $message .= "🔢 *Commande:* #{$order->order_number}\n\n";
-        $message .= "📥 *Téléchargez vos tickets:*\n";
+        $message .= "Tickets : *{$order->items->sum('quantity')}*\n";
+        $message .= 'Total : *'.number_format((float) $order->total_amount, 0, ',', ' ')." XOF*\n\n";
+        $message .= "Commande : *#{$order->order_number}*\n\n";
+        $message .= "Telechargez vos tickets :\n";
         $message .= "{$downloadUrl}\n\n";
-        $message .= "Présentez vos QR codes à l'entrée.\n\n";
-        $message .= 'Bon événement ! 🎉';
+        $message .= "Presentez vos QR codes a l'entree.\n\n";
+        $message .= 'Bon evenement !';
 
         return $message;
     }
