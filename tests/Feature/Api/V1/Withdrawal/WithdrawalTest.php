@@ -13,6 +13,7 @@ use App\Models\Withdrawal;
 use App\Support\Commission;
 use Database\Seeders\ScreenPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -54,6 +55,16 @@ function admin(): User
     $user = User::factory()->create();
     Role::findOrCreate('admin');
     $user->assignRole('admin');
+    seedScreens();
+
+    return $user;
+}
+
+function superAdmin(): User
+{
+    $user = User::factory()->create();
+    Role::findOrCreate('super-admin');
+    $user->assignRole('super-admin');
     seedScreens();
 
     return $user;
@@ -265,4 +276,33 @@ it('keeps an organizer from processing their own withdrawal', function (): void 
     $this->actingAs($manager)
         ->postJson("/api/v1/withdrawals/{$withdrawal->id}/process", ['status' => 'approved'])
         ->assertForbidden();
+});
+
+it('notifies admins and superadmins when an organizer requests a withdrawal', function (): void {
+    Notification::fake();
+
+    $organizer = organizerWithRevenue(gross: 100_000);
+    $manager = organizerManagerFor($organizer);
+    $admin = admin();
+    $superAdmin = superAdmin();
+
+    $payload = [
+        'organizer_id' => $organizer->id,
+        'requester_phone' => '+22890112233',
+        'amount' => 50000,
+        'payment_method' => 'flooz',
+    ];
+
+    $this->actingAs($manager)
+        ->postJson('/api/v1/withdrawals', $payload)
+        ->assertCreated();
+
+    Notification::assertSentTo(
+        [$admin, $superAdmin],
+        \App\Notifications\NewWithdrawalRequestNotification::class,
+        function ($notification) use ($organizer): bool {
+            return (string) $notification->withdrawal->organizer_id === (string) $organizer->id
+                && (float) $notification->withdrawal->amount === 50000.0;
+        }
+    );
 });

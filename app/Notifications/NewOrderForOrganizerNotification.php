@@ -47,7 +47,7 @@ final class NewOrderForOrganizerNotification extends Notification implements Sho
             'title' => 'Nouvelle commande pour votre événement',
             'message' => "Nouvelle commande #{$this->order->order_number} pour l'événement '{$this->event->title}'",
             'action' => 'view_order',
-            'url' => "/organizer/orders/{$this->order->id}",
+            'url' => "/orders/{$this->order->id}",
             'order_id' => $this->order->id,
             'order_number' => $this->order->order_number,
             'event_id' => $this->event->id,
