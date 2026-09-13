@@ -44,10 +44,16 @@ final class ValidateCouponAction implements Action
 
         // Check if coupon applies to specific event
         if ($eventId !== null) {
-            $coupon->load('events');
+            $coupon->loadMissing('events');
 
-            if ($coupon->events->isNotEmpty() && ! $coupon->events->contains('id', $eventId)) {
-                throw new \DomainException('Ce code promo ne s\'applique pas à cet événement.');
+            if ($coupon->events->isNotEmpty()) {
+                $matches = $coupon->events->contains(function ($event) use ($eventId) {
+                    return $event->id === $eventId || $event->slug === $eventId;
+                });
+
+                if (! $matches) {
+                    throw new \DomainException('Ce code promo ne s\'applique pas à cet événement.');
+                }
             }
         }
 
