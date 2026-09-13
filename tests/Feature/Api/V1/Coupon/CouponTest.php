@@ -129,6 +129,37 @@ it('can update coupon', function (): void {
     expect($coupon->value)->toBe('25.00');
 });
 
+it('allows updating coupon with its own existing code without triggering unique validation error', function (): void {
+    $coupon = Coupon::factory()->create([
+        'code' => 'DA3',
+        'value' => 10,
+    ]);
+
+    $payload = [
+        'code' => 'DA3',
+        'value' => 15,
+    ];
+
+    $response = $this->actingAs($this->user)
+        ->putJson("/api/v1/coupons/{$coupon->id}", $payload);
+
+    $response->assertOk()
+        ->assertJson(['success' => true]);
+
+    expect($coupon->fresh()->value)->toBe('15.00');
+});
+
+it('rejects updating coupon with another existing coupon code', function (): void {
+    Coupon::factory()->create(['code' => 'OTHERCODE']);
+    $coupon = Coupon::factory()->create(['code' => 'DA3']);
+
+    $response = $this->actingAs($this->user)
+        ->putJson("/api/v1/coupons/{$coupon->id}", ['code' => 'OTHERCODE']);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors('code');
+});
+
 it('can delete coupon', function (): void {
     $coupon = Coupon::factory()->create(['code' => 'DELETEME']);
 

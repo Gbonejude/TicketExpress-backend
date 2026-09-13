@@ -27,7 +27,11 @@ final class UpdateCouponRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            $coupon = $this->route('id');
+            $coupon = $this->route('id') ?? $this->route('coupon');
+
+            if (is_string($coupon)) {
+                $coupon = Coupon::find($coupon);
+            }
 
             if (! $coupon instanceof Coupon) {
                 return;
@@ -94,7 +98,8 @@ final class UpdateCouponRequest extends FormRequest
      */
     public function rules(): array
     {
-        $couponId = $this->route('coupon');
+        $coupon = $this->route('id') ?? $this->route('coupon');
+        $couponId = $coupon instanceof Coupon ? $coupon->id : $coupon;
 
         return [
             'code' => [
