@@ -79,10 +79,6 @@ final class WithdrawalController extends Controller
             $query->where('organizer_id', $request->input('organizer_id'));
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
         if ($request->filled('payment_method')) {
             $query->where('payment_method', $request->input('payment_method'));
         }
@@ -98,15 +94,18 @@ final class WithdrawalController extends Controller
             });
         }
 
-        // Les totaux accompagnent la liste : ils portent sur l'ensemble filtré,
-        // pas sur la page affichée — un « en attente : 3 » calculé sur 15 lignes
-        // ne veut rien dire.
+        // Les totaux accompagnent la liste : ils portent sur l'ensemble filtré
+        // (sans restreindre au seul statut actif, pour alimenter onglets et cartes).
         $totals = (clone $query)
             ->reorder()
             ->selectRaw('status, COUNT(*) as count, SUM(amount) as total')
             ->groupBy('status')
             ->get()
             ->keyBy('status');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
 
         return WithdrawalResource::collection($query->paginate(15))
             ->additional([
