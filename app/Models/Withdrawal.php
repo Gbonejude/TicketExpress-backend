@@ -52,6 +52,15 @@ final class Withdrawal extends Model
         return $this->belongsTo(related: User::class, foreignKey: 'processed_by');
     }
 
+    public function paymentMethodLabel(): string
+    {
+        return match ($this->payment_method) {
+            'flooz' => 'Flooz',
+            'tmoney' => 'Mix by Yas',
+            default => (string) $this->payment_method,
+        };
+    }
+
     protected function casts(): array
     {
         return [

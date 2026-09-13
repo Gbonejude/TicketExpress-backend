@@ -11,9 +11,11 @@ use App\Http\Requests\V1\Withdrawal\StoreWithdrawalRequest;
 use App\Http\Resources\V1\WithdrawalResource;
 use App\Jobs\SendEmailJob;
 use App\Mail\WithdrawalProcessedMail;
+use App\Helpers\NotificationHelper;
 use App\Models\Organizer;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Notifications\NewWithdrawalRequestNotification;
 use App\Services\Payment\PayoutService;
 use App\Support\Commission;
 use Illuminate\Database\Eloquent\Builder;
@@ -195,8 +197,13 @@ final class WithdrawalController extends Controller
             'status' => WithdrawalStatus::PENDING,
         ]);
 
+        $withdrawal->load('organizer');
+
+        // Notifier tous les administrateurs et super-administrateurs de la demande de retrait
+        NotificationHelper::notifyAdmins(new NewWithdrawalRequestNotification($withdrawal));
+
         return $this->created(
-            data: new WithdrawalResource($withdrawal->load('organizer')),
+            data: new WithdrawalResource($withdrawal),
             message: 'Demande de retrait créée avec succès.',
         );
     }
