@@ -6,6 +6,7 @@ namespace App\Actions\V1\Auth;
 
 use App\Actions\Contracts\Action;
 use App\Enums\UserRole;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -33,6 +34,12 @@ final class RegisterClientAction implements Action
             ]);
 
             $user->assignRole(UserRole::PARTICIPANT->value);
+
+            // Rattacher les commandes passées sous cette même adresse e-mail
+            Order::query()
+                ->whereNull('user_id')
+                ->where('email', $user->email)
+                ->update(['user_id' => $user->id]);
 
             return $user;
         });

@@ -94,11 +94,17 @@ final class OrderController extends Controller
         // achats.
         $user = $request->user();
         $scopedOrganizerId = CatalogueAudience::scopedOrganizerId($request);
+        $mine = $request->boolean('mine') || $request->input('scope') === 'me';
 
-        if ($scopedOrganizerId !== null) {
+        if ($mine || ! ($user && $user->hasAnyRole(['admin', 'super-admin']) || $scopedOrganizerId !== null)) {
+            $query->where(function (Builder $q) use ($user): void {
+                $q->where('user_id', $user?->id);
+                if ($user?->email) {
+                    $q->orWhere('email', $user->email);
+                }
+            });
+        } elseif ($scopedOrganizerId !== null) {
             $query->whereHas('items.ticketType.event', fn (Builder $q) => $q->where('organizer_id', $scopedOrganizerId));
-        } elseif (! ($user && $user->hasAnyRole(['admin', 'super-admin']))) {
-            $query->where('user_id', $user?->id);
         }
 
         if ($request->filled('status')) {
@@ -174,6 +180,16 @@ final class OrderController extends Controller
         try {
             /** @var array{user_id?: string|null, first_name: string, last_name: string, email: string, phone: string, delivery_method: string, payment_method?: string|null, coupon_code?: string|null, items: array<int, array{ticket_type_id: string, quantity: int}>} $validated */
             $validated = $request->validated();
+
+            $sanctumUser = $request->user('sanctum') ?? $request->user();
+            if ($sanctumUser && empty($validated['user_id'])) {
+                $validated['user_id'] = $sanctumUser->id;
+            } elseif (empty($validated['user_id'])) {
+                $existingUser = \App\Models\User::where('email', $validated['email'])->first();
+                if ($existingUser) {
+                    $validated['user_id'] = $existingUser->id;
+                }
+            }
 
             $order = $this->createOrderAction->execute($validated);
 
@@ -257,7 +273,10 @@ final class OrderController extends Controller
         }
 
         // Check if user owns the order or is admin
-        if ((string) $order->user_id !== (string) $user->id && ! $user->hasRole('admin')) {
+        $isOwner = (string) $order->user_id === (string) $user->id
+            || ($user->email !== null && strtolower((string) $order->email) === strtolower((string) $user->email));
+
+        if (! $isOwner && ! $user->hasRole('admin')) {
             abort(404); // Return 404 instead of 403 for security
         }
 
