@@ -146,7 +146,36 @@ final class EventController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+            $status = (string) $request->input('status');
+
+            if ($status === EventStatus::FINISHED->value) {
+                $query->where(function (Builder $q): void {
+                    $q->where('status', EventStatus::FINISHED->value)
+                        ->orWhere(function (Builder $sub): void {
+                            $sub->where('status', EventStatus::PUBLISHED->value)
+                                ->where(function (Builder $d): void {
+                                    $d->where(function (Builder $e): void {
+                                        $e->whereNotNull('end_date')->where('end_date', '<', now());
+                                    })->orWhere(function (Builder $s): void {
+                                        $s->whereNull('end_date')->whereNotNull('start_date')->where('start_date', '<', now());
+                                    });
+                                });
+                        });
+                });
+            } elseif ($status === EventStatus::PUBLISHED->value) {
+                $query->where('status', EventStatus::PUBLISHED->value)
+                    ->where(function (Builder $q): void {
+                        $q->where(function (Builder $e): void {
+                            $e->whereNotNull('end_date')->where('end_date', '>=', now());
+                        })->orWhere(function (Builder $s): void {
+                            $s->whereNull('end_date')->where(function (Builder $nullEnd): void {
+                                $nullEnd->whereNull('start_date')->orWhere('start_date', '>=', now());
+                            });
+                        });
+                    });
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         if ($request->filled('category_id')) {

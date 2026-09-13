@@ -173,6 +173,30 @@ final class Event extends Model implements HasMedia
             ->withTimestamps();
     }
 
+    /**
+     * Determine if the event is past based on end_date (or start_date if no end_date).
+     */
+    public function isPast(): bool
+    {
+        if ($this->end_date !== null) {
+            return $this->end_date->isPast();
+        }
+
+        if ($this->start_date !== null) {
+            return $this->start_date->isPast();
+        }
+
+        return false;
+    }
+
+    /**
+     * An event is considered finished if its end date (or start date) is in the past.
+     */
+    public function isFinished(): bool
+    {
+        return $this->isPast();
+    }
+
     protected function casts(): array
     {
         return [

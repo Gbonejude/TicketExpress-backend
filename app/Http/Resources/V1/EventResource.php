@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\V1;
 
+use App\Enums\EventStatus;
 use App\Http\Resources\DateTimeResource;
 use App\Models\Event;
 use App\Support\CheckInWindow;
@@ -22,6 +23,11 @@ final class EventResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $status = $this->resource->status;
+        if ($status === EventStatus::PUBLISHED && $this->resource->isFinished()) {
+            $status = EventStatus::FINISHED;
+        }
+
         return [
             'id' => $this->id,
             'organizerId' => $this->organizer_id,
@@ -35,8 +41,8 @@ final class EventResource extends JsonResource
             'startDate' => $this->start_date ? new DateTimeResource(resource: $this->start_date) : null,
             'endDate' => $this->end_date ? new DateTimeResource(resource: $this->end_date) : null,
             'maxAttendees' => $this->max_attendees,
-            'status' => $this->resource->status->value,
-            'statusLabel' => $this->resource->status->label(),
+            'status' => $status->value,
+            'statusLabel' => $status->label(),
             'eventType' => $this->event_type?->value,
             'eventTypeLabel' => $this->event_type?->label(),
             'onlineUrl' => $this->online_url,
