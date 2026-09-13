@@ -23,6 +23,11 @@ final class StoreCouponRequest extends FormRequest
      * Un coupon doit être valable dans le futur : le créer déjà expiré n'a pas
      * de sens. `after:start_date` reste déclaratif ; « fin dans le futur » vit
      * ici pour ne pas heurter la clé de message `end_date.after` déjà prise.
+     *
+     * On valide aussi :
+     * - Un coupon `percent` ne peut pas dépasser 100 %.
+     * - Un coupon `fixed` ne peut pas dépasser le prix minimum des billets
+     *   de l'événement cible (sinon le total deviendrait négatif).
      */
     public function withValidator(Validator $validator): void
     {
@@ -40,6 +45,27 @@ final class StoreCouponRequest extends FormRequest
 
             if ($event?->end_date !== null && $end !== null && $end->gt($event->end_date)) {
                 $validator->errors()->add('end_date', 'La date de fin ne peut pas dépasser la fin de l\'événement (le '.$event->end_date->format('d/m/Y H:i').').');
+            }
+
+            $type  = $this->input('type');
+            $value = (float) $this->input('value', 0);
+
+            // Pourcentage plafonné à 100.
+            if ($type === 'percent' && $value > 100) {
+                $validator->errors()->add('value', 'Un coupon de type pourcentage ne peut pas dépasser 100 %.');
+            }
+
+            // Montant fixe : ne doit pas dépasser le prix minimum des billets
+            // de l'événement cible pour éviter un total négatif.
+            if ($type === 'fixed' && $event !== null && $value > 0) {
+                $minPrice = $event->ticketTypes()->min('price');
+
+                if ($minPrice !== null && $value > (float) $minPrice) {
+                    $validator->errors()->add(
+                        'value',
+                        'Le montant fixe ('.$value.' FCFA) dépasse le prix minimum des billets de cet événement ('.$minPrice.' FCFA). Réduisez la remise.',
+                    );
+                }
             }
         });
     }
