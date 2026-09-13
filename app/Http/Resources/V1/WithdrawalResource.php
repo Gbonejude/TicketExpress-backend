@@ -35,16 +35,17 @@ final class WithdrawalResource extends JsonResource
             // « flooz » et « tmoney » bruts, en minuscules.
             'paymentMethodLabel' => $this->paymentMethodLabel(),
 
-            // Le circuit est décidé par le domaine, pas par l'interface : celle-ci
-            // n'a plus qu'à proposer ce que cette liste contient. Un retrait payé
-            // ou rejeté la renvoie vide, donc plus aucune action possible.
-            'nextStatuses' => array_map(
-                static fn (\App\Enums\WithdrawalStatus $next): array => [
-                    'value' => $next->value,
-                    'label' => $next->label(),
-                ],
-                $status->nextStatuses(),
-            ),
+            // Le circuit de traitement est réservé à l'administration (admin & super-admin).
+            // L'organisateur ne peut pas faire évoluer le statut : nextStatuses est donc vide pour lui.
+            'nextStatuses' => ($request->user()?->hasAnyRole(['admin', 'super-admin']) ?? false)
+                ? array_map(
+                    static fn (\App\Enums\WithdrawalStatus $next): array => [
+                        'value' => $next->value,
+                        'label' => $next->label(),
+                    ],
+                    $status->nextStatuses(),
+                )
+                : [],
             'isFinal' => $status->isFinal(),
 
             'notes' => $this->notes,
