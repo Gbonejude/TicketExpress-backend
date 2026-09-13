@@ -28,6 +28,13 @@ final class PublishEventAction implements Action
             throw new \DomainException('L\'événement est déjà publié.');
         }
 
+        $isPast = ($event->start_date !== null && $event->start_date->isPast())
+            || ($event->end_date !== null && $event->end_date->isPast());
+
+        if ($isPast) {
+            throw new \DomainException('Impossible de publier un événement dont la date et l\'heure sont déjà passées.');
+        }
+
         if ($event->ticketTypes()->count() === 0) {
             throw new \DomainException('Impossible de publier un événement sans types de tickets.');
         }
