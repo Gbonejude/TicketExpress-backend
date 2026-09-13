@@ -49,5 +49,11 @@ final class ScheduleBootstrapper
             ->everyMinute()
             ->withoutOverlapping()
             ->runInBackground();
+
+        // Envoi des rappels d'événements (24h avant) et notifications de démarrage
+        $schedule->command('events:send-reminders')
+            ->everyFifteenMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 }

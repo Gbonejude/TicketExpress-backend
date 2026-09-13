@@ -16,6 +16,7 @@ use App\Models\Organizer;
 use App\Models\User;
 use App\Models\Withdrawal;
 use App\Notifications\NewWithdrawalRequestNotification;
+use App\Notifications\WithdrawalProcessedNotification;
 use App\Services\Payment\PayoutService;
 use App\Support\Commission;
 use Illuminate\Database\Eloquent\Builder;
@@ -360,7 +361,14 @@ final class WithdrawalController extends Controller
      */
     private function notifyOrganizer(Withdrawal $withdrawal): void
     {
-        $email = $withdrawal->organizer?->user?->email;
+        $withdrawal->loadMissing(['organizer.user']);
+        $organizerUser = $withdrawal->organizer?->user;
+
+        if ($organizerUser !== null) {
+            $organizerUser->notify(new WithdrawalProcessedNotification($withdrawal));
+        }
+
+        $email = $organizerUser?->email;
 
         if ($email === null || $email === '') {
             return;

@@ -64,11 +64,11 @@ final class EventCancelledListener implements ShouldQueue
 
             Log::info('Envoi des emails d\'annulation et traitement des remboursements', [
                 'event_id' => $cancelledEvent->id,
-                'event_name' => $cancelledEvent->name,
+                'event_title' => $cancelledEvent->title,
                 'total_orders' => $orders->count(),
             ]);
 
-            // Send cancellation email to each order customer
+            // Send cancellation email and in-app notification to each order customer
             foreach ($orders as $order) {
                 try {
                     SendEmailJob::dispatch(
@@ -90,6 +90,21 @@ final class EventCancelledListener implements ShouldQueue
                         'order_id' => $order->id,
                         'error' => $e->getMessage(),
                     ]);
+                }
+
+                if ($order->user) {
+                    try {
+                        $order->user->notify(new \App\Notifications\EventCancelledNotification(
+                            $cancelledEvent,
+                            $cancellationReason
+                        ));
+                    } catch (Exception $e) {
+                        Log::error('Échec envoi notification in-app annulation', [
+                            'order_id' => $order->id,
+                            'user_id' => $order->user->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
             }
 

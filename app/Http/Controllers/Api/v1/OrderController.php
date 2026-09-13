@@ -6,6 +6,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\V1\Order\CancelOrderAction;
 use App\Actions\V1\Order\CreateOrderAction;
+use App\Actions\V1\Ticket\RefundTicketAction;
+use App\Enums\OrderStatus;
+use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\Order\StoreOrderRequest;
 use App\Http\Resources\V1\OrderResource;
@@ -28,6 +31,7 @@ final class OrderController extends Controller
     public function __construct(
         private readonly CreateOrderAction $createOrderAction,
         private readonly CancelOrderAction $cancelOrderAction,
+        private readonly RefundTicketAction $refundTicketAction,
     ) {}
 
     /**
@@ -303,6 +307,76 @@ final class OrderController extends Controller
             return $this->success(
                 data: new OrderResource($order),
                 message: 'Commande annulée avec succès.',
+            );
+        } catch (\DomainException $e) {
+            return $this->error(
+                message: $e->getMessage(),
+                status: 422,
+            );
+        }
+    }
+
+    /**
+     * Request refund for an order
+     *
+     * Cancels the reservation and refunds all valid tickets of the order if eligible.
+     *
+     * @response 200 {
+     *   "success": true,
+     *   "message": "Commande et billets remboursés avec succès.",
+     *   "data": { ... }
+     * }
+     */
+    public function refund(Request $request, Order $order): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            abort(401, 'Unauthenticated');
+        }
+
+        $isOwner = (string) $order->user_id === (string) $user->id
+            || ($user->email !== null && strtolower((string) $order->email) === strtolower((string) $user->email));
+
+        $isAdmin = $user->hasRole('admin');
+
+        if (! $isOwner && ! $isAdmin) {
+            abort(404);
+        }
+
+        if ($order->status === OrderStatus::REFUNDED) {
+            return $this->error(
+                message: 'Cette commande a déjà été remboursée.',
+                status: 422,
+            );
+        }
+
+        $validTickets = $order->tickets()->where('status', TicketStatus::VALID)->get();
+
+        if ($validTickets->isEmpty()) {
+            return $this->error(
+                message: 'Aucun billet valide éligible au remboursement dans cette commande.',
+                status: 422,
+            );
+        }
+
+        $reason = $request->input('reason', 'Demande de remboursement client');
+        $forceRefund = $isAdmin && $request->boolean('force_refund');
+
+        try {
+            foreach ($validTickets as $ticket) {
+                $this->refundTicketAction->execute([
+                    'ticket' => $ticket,
+                    'reason' => $reason,
+                    'force_refund' => $forceRefund,
+                ]);
+            }
+
+            $order->refresh();
+            $order->load(['tickets.ticketType.event', 'items']);
+
+            return $this->success(
+                data: new OrderResource($order),
+                message: 'Commande et billets remboursés avec succès.',
             );
         } catch (\DomainException $e) {
             return $this->error(

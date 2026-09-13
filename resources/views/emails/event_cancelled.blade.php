@@ -144,9 +144,9 @@
             <p>Nous vous informons avec regret que l'événement suivant a été annulé :</p>
 
             <div class="event-details">
-                <p><strong>📅 Événement :</strong> {{ $event->name }}</p>
-                <p><strong>🗓️ Date prévue :</strong> {{ $event->start_date->format('d/m/Y à H:i') }}</p>
-                <p><strong>📍 Lieu :</strong> {{ $event->location }}</p>
+                <p><strong>📅 Événement :</strong> {{ $event->title }}</p>
+                <p><strong>🗓️ Date prévue :</strong> {{ $event->start_date ? $event->start_date->format('d/m/Y à H:i') : 'Non précisée' }}</p>
+                <p><strong>📍 Lieu :</strong> {{ $event->venue?->name ?? $event->online_url ?? 'Lieu non spécifié' }}</p>
                 @if($event->end_date)
                 <p><strong>⏰ Fin prévue :</strong> {{ $event->end_date->format('d/m/Y à H:i') }}</p>
                 @endif
