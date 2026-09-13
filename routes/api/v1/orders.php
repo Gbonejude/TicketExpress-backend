@@ -12,6 +12,7 @@ Route::post('orders', [OrderController::class, 'store'])->name('orders.store');
 Route::middleware('auth:sanctum')->group(function (): void {
     // Custom routes BEFORE apiResource
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->whereUlid('order')->name('orders.cancel');
+    Route::post('orders/{order}/refund', [OrderController::class, 'refund'])->whereUlid('order')->name('orders.refund');
 
     Route::apiResource('orders', OrderController::class)
         ->only(['index', 'show'])

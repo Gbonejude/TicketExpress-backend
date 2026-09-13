@@ -187,6 +187,19 @@ final class TicketController extends Controller
             $user = $request->user();
             $isAdmin = $user && $user->hasRole('admin');
 
+            $ticket->loadMissing('order');
+            $isOwner = $ticket->order && (
+                (string) $ticket->order->user_id === (string) $user?->id
+                || ($user?->email !== null && strtolower((string) $ticket->order->email) === strtolower((string) $user->email))
+            );
+
+            if (! $isOwner && ! $isAdmin) {
+                return $this->error(
+                    message: 'Vous n\'êtes pas autorisé à demander le remboursement de ce billet.',
+                    status: 403,
+                );
+            }
+
             $refundedTicket = $this->refundTicketAction->execute([
                 'ticket' => $ticket,
                 'reason' => $request->input('reason'),
