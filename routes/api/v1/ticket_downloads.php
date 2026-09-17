@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Api\v1\TicketDownloadController;
+use App\Http\Controllers\Api\V1\TicketDownloadController;
 use Illuminate\Support\Facades\Route;
 
 /*
