@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - develop
+      - main # Actif sur main et develop
+  workflow_dispatch: # Permet de lancer le déploiement manuellement depuis un bouton dans GitHub !
 
 concurrency:
   group: deploy-ticket-express
@@ -24,7 +26,10 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
-          # Écriture de la clé privée personnalisée pour Ticket Express
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          # Écriture de la clé privée avec le nom personnalisé ticket_express_deploy
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/ticket_express_deploy
           chmod 600 ~/.ssh/ticket_express_deploy
 
@@ -71,8 +76,3 @@ jobs:
 
             echo '✅ Déploiement de Ticket Express terminé avec succès !'
           "
-
-      - name: 🧹 Nettoyage de la clé
-        if: always()
-        run: |
-          rm -f ~/.ssh/ticket_express_deploy
