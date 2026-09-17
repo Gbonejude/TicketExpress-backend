@@ -1,0 +1,77 @@
+name: Déploiement Continu (Ticket Express)
+
+on:
+  push:
+    branches:
+      - develop
+
+concurrency:
+  group: deploy-ticket-express
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Déploiement vers Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Récupération du code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Configuration de la clé SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          # Écriture de la clé privée personnalisée pour Ticket Express
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/ticket_express_deploy
+          chmod 600 ~/.ssh/ticket_express_deploy
+
+          # Ajout du serveur aux hôtes connus pour éviter l'invite interactive
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: 🚀 Exécution des commandes de déploiement
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh -i ~/.ssh/ticket_express_deploy -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "
+            set -e
+
+            echo '=== 1. Accès au dossier du projet ==='
+            cd $DEPLOY_PATH
+
+            echo '=== 2. Nettoyage et mise à jour Git ==='
+            git reset --hard HEAD
+            # Protéger .env et .htaccess du nettoyage
+            git clean -df -e .htaccess -e public/.htaccess -e .env
+            rm -f bootstrap/cache/*.php
+            git pull origin develop
+
+            echo '=== 3. Installation des dépendances Composer ==='
+            scl enable php82 -- composer install --no-dev --optimize-autoloader --no-interaction
+
+            echo '=== 4. Migration de la base de données ==='
+            scl enable php82 -- php artisan migrate --force
+
+            echo '=== 5. Optimisation du cache Laravel ==='
+            scl enable php82 -- php artisan cache:clear
+            scl enable php82 -- php artisan config:clear
+            scl enable php82 -- php artisan view:clear
+            scl enable php82 -- php artisan config:cache
+            scl enable php82 -- php artisan route:cache
+            scl enable php82 -- php artisan view:cache
+
+            echo '=== 6. Droits sur les dossiers ==='
+            chmod -R 775 storage bootstrap/cache
+
+            echo '✅ Déploiement de Ticket Express terminé avec succès !'
+          "
+      - name: 🧹 Nettoyage de la clé
+        if: always()
+        run: |
+          rm -f ~/.ssh/ticket_express_deploy
