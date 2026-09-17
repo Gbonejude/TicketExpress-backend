@@ -24,9 +24,6 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
           # Écriture de la clé privée personnalisée pour Ticket Express
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/ticket_express_deploy
           chmod 600 ~/.ssh/ticket_express_deploy
