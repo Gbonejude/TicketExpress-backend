@@ -21,35 +21,43 @@ class TestUsersSeeder extends Seeder
         $password = Hash::make('Password123!');
 
         // 1. Super Admin
-        $superAdmin = User::where('email', 'superadmin@test.tg')->first();
+        $superAdmin = User::where('email', 'superadmin@gmail.com')->first()
+            ?? User::where('email', 'superadmin@test.com')->first()
+            ?? User::where('email', 'superadmin@test.tg')->first();
 
         if (! $superAdmin) {
             $superAdmin = User::create([
-                'email' => 'superadmin@test.tg',
+                'email' => 'superadmin@gmail.com',
                 'first_name' => 'Super',
                 'last_name' => 'Admin',
                 'phone' => '+22890999901',
                 'password' => $password,
                 'email_verified_at' => now(),
             ]);
+        } else {
+            $superAdmin->update(['email' => 'superadmin@gmail.com']);
         }
 
         if (! $superAdmin->hasRole('super-admin')) {
             $superAdmin->assignRole('super-admin');
         }
 
-        // 2. Adminadmin@test.tg
-        $admin = User::where('email', '')->first();
+        // 2. Admin
+        $admin = User::where('email', 'admin@gmail.com')->first()
+            ?? User::where('email', 'admin@test.com')->first()
+            ?? User::where('email', 'admin@test.tg')->first();
 
         if (! $admin) {
             $admin = User::create([
-                'email' => 'admin@test.tg',
+                'email' => 'admin@gmail.com',
                 'first_name' => 'Admin',
                 'last_name' => 'Test',
                 'phone' => '+22890999902',
                 'password' => $password,
                 'email_verified_at' => now(),
             ]);
+        } else {
+            $admin->update(['email' => 'admin@gmail.com']);
         }
 
         if (! $admin->hasRole('admin')) {
@@ -75,17 +83,21 @@ class TestUsersSeeder extends Seeder
         }
 
         // 4. Organizer Manager de Test
-        $organizerManager = User::where('email', 'organizer@test.tg')->first();
+        $organizerManager = User::where('email', 'organizer@gmail.com')->first()
+            ?? User::where('email', 'organizer@test.com')->first()
+            ?? User::where('email', 'organizer@test.tg')->first();
 
         if (! $organizerManager) {
             $organizerManager = User::create([
-                'email' => 'organizer@test.tg',
+                'email' => 'organizer@gmail.com',
                 'first_name' => 'Organizer',
                 'last_name' => 'Manager',
                 'phone' => '+22890999903',
                 'password' => $password,
                 'email_verified_at' => now(),
             ]);
+        } else {
+            $organizerManager->update(['email' => 'organizer@gmail.com']);
         }
 
         if (! $organizerManager->hasRole('organizer-manager')) {
@@ -98,7 +110,7 @@ class TestUsersSeeder extends Seeder
                 'user_id' => $organizerManager->id,
                 'company_name' => 'Test Event Company',
                 'description' => 'A test organizer company for API testing',
-                'website' => 'https://test-organizer.tg',
+                'website' => 'https://test-organizer.com',
                 'status' => OrganizerStatus::APPROVED,
             ]);
         } else {
@@ -109,10 +121,10 @@ class TestUsersSeeder extends Seeder
         }
 
         $this->command->info('Test users seeded successfully!');
-        $this->command->info('- Super Admin: superadmin@test.tg');
-        $this->command->info('- Admin: admin@test.tg');
+        $this->command->info('- Super Admin: superadmin@gmail.com');
+        $this->command->info('- Admin: admin@gmail.com');
         $this->command->info('- Participant (Komi CREPPY): judasgbone@gmail.com');
-        $this->command->info('- Organizer Manager: organizer@test.tg');
+        $this->command->info('- Organizer Manager: organizer@gmail.com');
         $this->command->info('Password for all: Password123!');
     }
 }

@@ -6,28 +6,26 @@ namespace App\Listeners\Organizer;
 
 use App\Events\Organizer\OrganizerCreatedEvent;
 use App\Models\User;
+use App\Notifications\OrganizerApplicationReceivedNotification;
 use App\Notifications\OrganizerRegisteredNotification;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
-use ReflectionClass;
 
 final class OrganizerCreatedListener implements ShouldQueue
 {
     use InteractsWithQueue;
+
+    public string $queue = 'notifications';
 
     public function __construct() {}
 
     public function handle(OrganizerCreatedEvent $event): void
     {
         try {
-            // Utiliser Reflection pour accéder à la propriété private
-            $reflection = new ReflectionClass($event);
-            $organizerProperty = $reflection->getProperty('organizer');
-            $organizerProperty->setAccessible(true);
-            $organizer = $organizerProperty->getValue($event);
+            $organizer = $event->organizer;
 
             if (! $organizer) {
                 Log::warning('Organizer not found in OrganizerCreatedEvent');
@@ -35,14 +33,21 @@ final class OrganizerCreatedListener implements ShouldQueue
                 return;
             }
 
-            // Notifier tous les admins et super-admins
+            $organizer->loadMissing('user');
+
+            // 1. Notifier tous les admins et super-admins (email + cloche)
             $admins = User::role(['admin', 'super-admin'])->get();
 
             if ($admins->isNotEmpty() && $organizer->user) {
                 Notification::send($admins, new OrganizerRegisteredNotification($organizer, $organizer->user));
             }
 
-            Log::info('Organizer created notification sent', [
+            // 2. Accuser réception par email à l'organisateur qui a fait la demande
+            if ($organizer->user && ($organizer->status?->value ?? $organizer->status) === 'pending') {
+                $organizer->user->notify(new OrganizerApplicationReceivedNotification($organizer));
+            }
+
+            Log::info('Organizer created notifications sent', [
                 'organizer_id' => $organizer->id,
             ]);
         } catch (Exception $e) {

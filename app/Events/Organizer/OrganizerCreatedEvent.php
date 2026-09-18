@@ -22,7 +22,7 @@ final class OrganizerCreatedEvent implements ShouldBroadcast
      *
      * @return void
      */
-    public function __construct(private Organizer $organizer) {}
+    public function __construct(public readonly Organizer $organizer) {}
 
     /**
      * Broadcast's event name

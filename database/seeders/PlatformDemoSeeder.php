@@ -332,7 +332,10 @@ final class PlatformDemoSeeder extends Seeder
         $this->seedPendingApplications();
 
         $client = User::where('email', 'judasgbone@gmail.com')->first()
-            ?? User::factory()->create(['email' => 'client@test.tg']);
+            ?? User::where('email', 'client@gmail.com')->first()
+            ?? User::where('email', 'client@test.com')->first()
+            ?? User::where('email', 'client@test.tg')->first()
+            ?? User::factory()->create(['email' => 'client@gmail.com']);
 
         $paidTiers = collect();
         $ongoingTiers = collect();
@@ -421,12 +424,14 @@ final class PlatformDemoSeeder extends Seeder
     private function seedOrganizers(): Collection
     {
         return collect(self::ORGANIZERS)->map(function (array $row, int $index): Organizer {
-            // The first profile takes over the `organizer@test.tg` account that
+            // The first profile takes over the `organizer@test.com` account that
             // TestUsersSeeder creates. Otherwise that account keeps its empty
             // "Test Event Company" — no logo, no events — which shows up in the
             // public directory as a broken profile, and the one login used to
             // demo the back-office has nothing to manage.
-            $user = ($index === 0 ? User::where('email', 'organizer@test.tg')->first() : null)
+            $user = ($index === 0
+                ? (User::where('email', 'organizer@gmail.com')->first() ?? User::where('email', 'organizer@test.com')->first() ?? User::where('email', 'organizer@test.tg')->first())
+                : null)
                 ?? $this->organizerUser($row);
 
             if (! $user->hasRole('organizer-manager')) {
@@ -1148,7 +1153,11 @@ final class PlatformDemoSeeder extends Seeder
      */
     private function seedWithdrawals(): void
     {
-        $admin = User::where('email', 'admin@test.tg')->first()
+        $admin = User::where('email', 'admin@gmail.com')->first()
+            ?? User::where('email', 'admin@test.com')->first()
+            ?? User::where('email', 'admin@test.tg')->first()
+            ?? User::where('email', 'superadmin@gmail.com')->first()
+            ?? User::where('email', 'superadmin@test.com')->first()
             ?? User::where('email', 'superadmin@test.tg')->first();
 
         $rejectedIssued = false;

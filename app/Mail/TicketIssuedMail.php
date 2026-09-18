@@ -21,7 +21,7 @@ final class TicketIssuedMail extends Mailable implements ShouldQueue
      * Create a new message instance.
      */
     public function __construct(
-        private readonly Ticket $ticket,
+        public readonly Ticket $ticket,
     ) {}
 
     /**
@@ -29,8 +29,10 @@ final class TicketIssuedMail extends Mailable implements ShouldQueue
      */
     public function envelope(): Envelope
     {
+        $eventTitle = $this->ticket->ticketType?->event?->title ?? 'Événement';
+
         return new Envelope(
-            subject: 'Votre billet - '.$this->ticket->ticketType->event->title,
+            subject: 'Votre billet - '.$eventTitle,
         );
     }
 
@@ -39,14 +41,18 @@ final class TicketIssuedMail extends Mailable implements ShouldQueue
      */
     public function content(): Content
     {
+        $qrPayload = $this->ticket->qr_code ?: $this->ticket->ticket_number;
+        $qrPng = \App\Support\QrImage::png($qrPayload, 300, 2);
+
         return new Content(
             view: 'emails.ticket-issued',
             with: [
                 'ticket' => $this->ticket,
                 'order' => $this->ticket->order,
-                'event' => $this->ticket->ticketType->event,
+                'event' => $this->ticket->ticketType?->event,
                 'ticketType' => $this->ticket->ticketType,
                 'qrCode' => $this->ticket->qr_code,
+                'qrPng' => $qrPng,
                 'accessMethod' => $this->ticket->access_method,
             ],
         );
@@ -59,6 +65,34 @@ final class TicketIssuedMail extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
-        return [];
+        if (! $this->ticket->order) {
+            return [];
+        }
+
+        try {
+            $order = $this->ticket->order->load([
+                'tickets.ticketType.event.venue',
+                'tickets.ticketType.event.organizer',
+                'tickets.ticketType.occurrence',
+                'items.ticketType.event',
+                'payments',
+                'user',
+            ]);
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdfs.ticket', [
+                'order' => $order,
+            ]);
+
+            $reference = $this->ticket->ticket_number ?: $this->ticket->id;
+
+            return [
+                Attachment::fromData(fn () => $pdf->output(), "billet-{$reference}.pdf")
+                    ->withMime('application/pdf'),
+            ];
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Échec génération PDF pour TicketIssuedMail: '.$e->getMessage());
+
+            return [];
+        }
     }
 }

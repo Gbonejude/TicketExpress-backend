@@ -23,7 +23,7 @@ final class OrganizerStatusUpdatedEvent implements ShouldBroadcast
      * Create a new event instance.
      */
     public function __construct(
-        private readonly Organizer $organizer,
+        public readonly Organizer $organizer,
     ) {}
 
     /**
