@@ -50,7 +50,7 @@ final class EventPublishedNotification extends Notification implements ShouldQue
             'title' => 'Événement publié',
             'message' => "Événement publié : {$this->event->title} par {$publishedByName}",
             'action' => 'view_event',
-            'url' => "/admin/events/{$this->event->id}",
+            'url' => "/events/{$this->event->id}",
             'event_id' => $this->event->id,
             'event_title' => $this->event->title,
             'published_by_name' => $publishedByName,

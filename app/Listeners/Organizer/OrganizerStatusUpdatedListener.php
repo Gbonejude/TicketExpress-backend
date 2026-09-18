@@ -6,7 +6,6 @@ namespace App\Listeners\Organizer;
 
 use App\Enums\OrganizerStatus;
 use App\Events\Organizer\OrganizerStatusUpdatedEvent;
-use App\Jobs\SendEmailJob;
 use App\Mail\OrganizerApprovedMail;
 use App\Mail\OrganizerRejectedMail;
 use App\Models\Organizer;
@@ -14,7 +13,7 @@ use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
-use ReflectionClass;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Listener for OrganizerStatusUpdatedEvent.
@@ -35,11 +34,7 @@ final class OrganizerStatusUpdatedListener implements ShouldQueue
     public function handle(OrganizerStatusUpdatedEvent $event): void
     {
         try {
-            // Extract organizer using Reflection (private readonly property)
-            $reflection = new ReflectionClass($event);
-            $property = $reflection->getProperty('organizer');
-            $property->setAccessible(true);
-            $organizer = $property->getValue($event);
+            $organizer = $event->organizer;
 
             if (! $organizer) {
                 Log::warning('Organizer not found in OrganizerStatusUpdatedEvent');
@@ -48,7 +43,15 @@ final class OrganizerStatusUpdatedListener implements ShouldQueue
             }
 
             // Load user relation
-            $organizer->load('user');
+            $organizer->loadMissing('user');
+
+            if (! $organizer->user || ! $organizer->user->email) {
+                Log::warning('User or email not found for organizer in OrganizerStatusUpdatedEvent', [
+                    'organizer_id' => $organizer->id,
+                ]);
+
+                return;
+            }
 
             // Send email based on status
             match ($organizer->status) {
@@ -69,13 +72,9 @@ final class OrganizerStatusUpdatedListener implements ShouldQueue
     private function sendApprovalEmail(Organizer $organizer): void
     {
         try {
-            SendEmailJob::dispatch(
-                to: $organizer->user->email,
-                mailableClass: OrganizerApprovedMail::class,
-                mailableData: [$organizer],
-            );
+            Mail::to($organizer->user->email)->send(new OrganizerApprovedMail($organizer));
 
-            Log::info('Email d\'approbation organisateur envoyé via Job', [
+            Log::info('Email d\'approbation organisateur envoyé avec succès', [
                 'organizer_id' => $organizer->id,
                 'email' => $organizer->user->email,
             ]);
@@ -93,17 +92,11 @@ final class OrganizerStatusUpdatedListener implements ShouldQueue
     private function sendRejectionEmail(Organizer $organizer): void
     {
         try {
-            // You can add a rejection_reason field to organizers table
-            // For now, use a default message
             $rejectionReason = $organizer->rejection_reason ?? null;
 
-            SendEmailJob::dispatch(
-                to: $organizer->user->email,
-                mailableClass: OrganizerRejectedMail::class,
-                mailableData: [$organizer, $rejectionReason],
-            );
+            Mail::to($organizer->user->email)->send(new OrganizerRejectedMail($organizer, $rejectionReason));
 
-            Log::info('Email de rejet organisateur envoyé', [
+            Log::info('Email de rejet organisateur envoyé avec succès', [
                 'organizer_id' => $organizer->id,
                 'email' => $organizer->user->email,
             ]);
@@ -115,3 +108,4 @@ final class OrganizerStatusUpdatedListener implements ShouldQueue
         }
     }
 }
+

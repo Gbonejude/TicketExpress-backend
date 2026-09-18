@@ -54,7 +54,7 @@ final class OrganizerRegisteredNotification extends Notification implements Shou
                 filled($this->organizer->description),
                 fn (MailMessage $mail) => $mail->line("Activité : {$this->organizer->description}"),
             )
-            ->action('Examiner la demande', config('app.dashboard_url').'/app/organizers')
+            ->action('Examiner la demande', config('app.dashboard_url').'/organizers')
             ->line('Le compte reste en attente tant qu’il n’a pas été approuvé.');
     }
 
@@ -71,7 +71,7 @@ final class OrganizerRegisteredNotification extends Notification implements Shou
             'title' => 'Nouvel organisateur inscrit',
             'message' => "Nouvel organisateur inscrit : {$this->organizer->company_name} ({$userName})",
             'action' => 'view_organizer',
-            'url' => "/admin/organizers/{$this->organizer->id}",
+            'url' => '/organizers',
             'organizer_id' => $this->organizer->id,
             'company_name' => $this->organizer->company_name,
             'user_name' => $userName,

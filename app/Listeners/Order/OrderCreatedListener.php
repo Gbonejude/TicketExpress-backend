@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace App\Listeners\Order;
 
 use App\Events\Order\OrderCreatedEvent;
-use App\Jobs\SendEmailJob;
-use App\Mail\OrderConfirmationMail;
 use App\Notifications\NewOrderForOrganizerNotification;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 use ReflectionClass;
 
 /**
  * Listener for OrderCreatedEvent.
- * Sends confirmation email to customer and notification to organizer.
+ *
+ * N'envoie PAS d'e-mail de confirmation ici : c'est OrderPaidListener qui le
+ * fait une fois le paiement confirmé, avec les billets générés joints.
+ * Envoyer un mail ici ET là-bas doublonnait la boîte de réception du client.
  */
 final class OrderCreatedListener implements ShouldQueue
 {
@@ -46,13 +46,6 @@ final class OrderCreatedListener implements ShouldQueue
                 return;
             }
 
-            // Send confirmation email to customer
-            SendEmailJob::dispatch(
-                to: $order->email,
-                mailableClass: OrderConfirmationMail::class,
-                mailableData: [$order],
-            );
-
             // Send notification to organizer
             // Get organizer from first order item's event
             if ($order->items->isNotEmpty()) {
@@ -66,14 +59,11 @@ final class OrderCreatedListener implements ShouldQueue
                         $organizerUser = $organizer->user;
                         $organizerUser->notify(new NewOrderForOrganizerNotification($order, $event));
                     }
-
-                    // TODO: Send notification via OneSignal
-                    // $this->oneSignalRepository->sendNotification(...)
                 }
             }
 
             // Log for analytics
-            Log::info('Commande créée - notifications envoyées', [
+            Log::info('Commande créée - notification organisateur envoyée', [
                 'order_id' => $order->id,
                 'user_id' => $order->user_id,
                 'total_amount' => $order->total_amount,
