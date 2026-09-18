@@ -53,25 +53,29 @@ final class EventUpdatedListener implements ShouldQueue
             ]);
 
             $notifiedUserIds = [];
+            $notifiedEmails = [];
 
             foreach ($orders as $order) {
-                // Send email to order contact email
-                try {
-                    SendEmailJob::dispatch(
-                        to: $order->email,
-                        mailableClass: EventUpdatedMail::class,
-                        mailableData: [
-                            $eventModel,
-                            $order,
-                            'L\'événement a été mis à jour par l\'organisateur. Consultez les nouvelles informations.',
-                        ],
-                    );
-                } catch (Exception $e) {
-                    Log::error('Échec envoi email mise à jour événement', [
-                        'order_id' => $order->id,
-                        'email' => $order->email,
-                        'error' => $e->getMessage(),
-                    ]);
+                // Send email to order contact email — once per unique address
+                if (! in_array($order->email, $notifiedEmails, true)) {
+                    try {
+                        SendEmailJob::dispatch(
+                            to: $order->email,
+                            mailableClass: EventUpdatedMail::class,
+                            mailableData: [
+                                $eventModel,
+                                $order,
+                                'L\'événement a été mis à jour par l\'organisateur. Consultez les nouvelles informations.',
+                            ],
+                        );
+                        $notifiedEmails[] = $order->email;
+                    } catch (Exception $e) {
+                        Log::error('Échec envoi email mise à jour événement', [
+                            'order_id' => $order->id,
+                            'email' => $order->email,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
 
                 // Send database notification to logged-in user (avoid duplicates if user has multiple orders)

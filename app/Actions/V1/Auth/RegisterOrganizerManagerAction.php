@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace App\Actions\V1\Auth;
 
 use App\Actions\Contracts\Action;
+use App\Events\Organizer\OrganizerCreatedEvent;
 use App\Events\ResourceChangedEvent;
 use App\Models\Organizer;
 use App\Models\User;
-use App\Notifications\OrganizerApplicationReceivedNotification;
-use App\Notifications\OrganizerRegisteredNotification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Notification;
-use Spatie\Permission\Models\Role;
 
 final class RegisterOrganizerManagerAction implements Action
 {
@@ -61,36 +58,21 @@ final class RegisterOrganizerManagerAction implements Action
                 $organizer->addMedia($data['logo'])->toMediaCollection('organizers');
             }
 
-            // Prévenir les administrateurs (cloche + e-mail). `admin` et
-            // `super-admin` : une plateforme qui n'a qu'un super-admin ne doit
-            // pas laisser la demande sans destinataire.
-            //
-            // Les rôles sont d'abord résolus depuis la base : `User::role()`
-            // lève `RoleDoesNotExist` pour un rôle absent, et une inscription
-            // ne doit pas répondre 500 parce qu'un rôle n'a pas été semé.
-            $roles = Role::whereIn('name', ['admin', 'super-admin'])->pluck('name')->all();
+            // Les notifications (email admin + accusé réception organisateur) sont
+            // gérées par OrganizerCreatedListener via l'event — ne pas les envoyer
+            // ici aussi, sinon chaque inscription produit un doublon.
+            DB::afterCommit(function () use ($organizer): void {
+                // Déclenche OrganizerCreatedListener → notif admins + accusé réception
+                event(new OrganizerCreatedEvent($organizer));
 
-            $admins = $roles === [] ? collect() : User::role($roles)->get();
-
-            if ($admins->isNotEmpty()) {
-                Notification::send(
-                    $admins,
-                    new OrganizerRegisteredNotification($organizer, $user)
+                // Real-time signal so the back-office organizers list refreshes
+                ResourceChangedEvent::dispatchQuietly(
+                    'organizers',
+                    'created',
+                    $organizer->id,
+                    $organizer->company_name,
                 );
-            }
-
-            // Accuser réception au demandeur : sans cela l'inscription se
-            // termine en silence sur un compte qui ne peut encore rien faire.
-            $user->notify(new OrganizerApplicationReceivedNotification($organizer));
-
-            // Real-time signal so the back-office organizers list refreshes
-            // (with a toast) without a manual reload.
-            DB::afterCommit(fn () => ResourceChangedEvent::dispatchQuietly(
-                'organizers',
-                'created',
-                $organizer->id,
-                $organizer->company_name,
-            ));
+            });
 
             return $user->load('organizer');
         });
