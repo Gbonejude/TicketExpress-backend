@@ -147,3 +147,11 @@ it('validates that phone is unique in database', function () use ($payload) {
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['phone']);
 });
+
+it('throttles registration attempts from the same client', function () use ($payload) {
+    foreach (range(1, 10) as $attempt) {
+        $this->postJson('/api/v1/auth/register/client', ['email' => "x{$attempt}"])->assertUnprocessable();
+    }
+
+    $this->postJson('/api/v1/auth/register/client', $payload())->assertTooManyRequests();
+});

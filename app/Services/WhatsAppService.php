@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Order;
+use App\Support\LogMask;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -59,7 +60,7 @@ final class WhatsAppService
         $encodedMessage = urlencode($message);
 
         Log::info('WhatsApp link generated', [
-            'phone' => $phone,
+            'phone' => LogMask::phone($phone),
             'message_length' => strlen($message),
         ]);
 
@@ -154,7 +155,7 @@ final class WhatsAppService
         Log::info('WhatsApp link clicked', [
             'order_id' => $order->id,
             'user_id' => $order->user_id,
-            'phone' => $order->phone,
+            'phone' => LogMask::phone($order->phone),
             'timestamp' => now()->toISOString(),
         ]);
     }

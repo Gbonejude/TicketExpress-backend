@@ -147,3 +147,12 @@ it('leaves the organizer null for an administrator', function () use ($credentia
         ->assertSuccessful()
         ->assertJsonPath('data.userData.organizer', null);
 });
+
+it('rejects a token once it has outlived sanctum.expiration', function () use ($credentials, $makeClient) {
+    $makeClient();
+    $token = $this->postJson('/api/v1/auth/login', $credentials)->json('data.token');
+
+    $this->travel((int) config('sanctum.expiration') + 1)->minutes();
+
+    $this->withToken($token)->getJson('/api/v1/me')->assertUnauthorized();
+});

@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Spatie\Permission\Models\Role;
 
 final class OrganizerCreatedListener implements ShouldQueue
 {
@@ -36,7 +37,11 @@ final class OrganizerCreatedListener implements ShouldQueue
             $organizer->loadMissing('user');
 
             // 1. Notifier tous les admins et super-admins (email + cloche)
-            $admins = User::role(['admin', 'super-admin'])->get();
+            // Rôles résolus depuis la base : `User::role()` lève
+            // `RoleDoesNotExist` pour un rôle absent, et l'exception, avalée par
+            // le try/catch, privait alors tous les admins de la notification.
+            $roles = Role::whereIn('name', ['admin', 'super-admin'])->pluck('name')->all();
+            $admins = $roles === [] ? collect() : User::role($roles)->get();
 
             if ($admins->isNotEmpty() && $organizer->user) {
                 Notification::send($admins, new OrganizerRegisteredNotification($organizer, $organizer->user));

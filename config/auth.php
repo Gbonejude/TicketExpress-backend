@@ -114,4 +114,16 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | OTP Test Bypass
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, the code "000000" validates any OTP. Development only: it is
+    | ignored in production whatever its value, and off unless set explicitly.
+    |
+    */
+
+    'otp_test_bypass' => (bool) env('OTP_TEST_BYPASS', false),
+
 ];

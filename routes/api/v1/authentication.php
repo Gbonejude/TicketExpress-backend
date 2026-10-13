@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function (): void {
     Route::post('send-otp', [AuthController::class, 'sendOtp'])->middleware('throttle:3,1');
     Route::post('verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:5,1');
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('register/client', [AuthController::class, 'registerClient']);
-    Route::post('register/organizer-manager', [AuthController::class, 'registerOrganizerManager']);
+    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+    Route::post('register/client', [AuthController::class, 'registerClient'])->middleware('throttle:10,1');
+    Route::post('register/organizer-manager', [AuthController::class, 'registerOrganizerManager'])->middleware('throttle:10,1');
 
     // Public site login. The back-office keeps `admin/login`, which returns
     // permission rules on top of the token.

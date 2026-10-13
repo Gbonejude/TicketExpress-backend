@@ -55,5 +55,12 @@ final class ScheduleBootstrapper
             ->everyFifteenMinutes()
             ->withoutOverlapping()
             ->runInBackground();
+
+        // Les tokens API expirent (sanctum.expiration) mais restent en base :
+        // on purge ceux expirés depuis plus d'un jour.
+        $schedule->command('sanctum:prune-expired --hours=24')
+            ->daily()
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 }

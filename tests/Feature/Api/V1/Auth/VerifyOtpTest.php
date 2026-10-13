@@ -87,3 +87,34 @@ it('returns 422 when fields are missing', function () {
     $this->postJson('/api/v1/auth/verify-otp', [])
         ->assertUnprocessable();
 });
+
+it('refuses to validate the same OTP twice', function () {
+    createOtp('+22890000009');
+    $payload = ['phone' => '+22890000009', 'code' => '123456'];
+
+    $this->postJson('/api/v1/auth/verify-otp', $payload)->assertOk();
+    $this->postJson('/api/v1/auth/verify-otp', $payload)->assertStatus(422);
+});
+
+it('ignores the 000000 bypass code unless OTP_TEST_BYPASS is set', function () {
+    config(['auth.otp_test_bypass' => false]);
+    createOtp('+22890000010');
+
+    $this->postJson('/api/v1/auth/verify-otp', ['phone' => '+22890000010', 'code' => '000000'])
+        ->assertStatus(422);
+});
+
+it('accepts the 000000 bypass code when the flag is set outside production', function () {
+    config(['auth.otp_test_bypass' => true]);
+
+    $this->postJson('/api/v1/auth/verify-otp', ['phone' => '+22890000011', 'code' => '000000'])
+        ->assertOk();
+});
+
+it('never accepts the bypass code in production, even with the flag set', function () {
+    config(['auth.otp_test_bypass' => true]);
+    app()->detectEnvironment(fn (): string => 'production');
+
+    $this->postJson('/api/v1/auth/verify-otp', ['phone' => '+22890000012', 'code' => '000000'])
+        ->assertStatus(422);
+});

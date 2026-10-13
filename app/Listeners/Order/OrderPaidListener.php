@@ -14,6 +14,7 @@ use App\Models\OrderItem;
 use App\Models\Ticket;
 use App\Models\TicketDownloadLink;
 use App\Services\TicketDownloadService;
+use App\Support\LogMask;
 use App\Support\TicketNumber;
 use Exception;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -34,7 +35,6 @@ use ReflectionClass;
  */
 final class OrderPaidListener
 {
-
     /**
      * Handle the event.
      */
@@ -117,7 +117,7 @@ final class OrderPaidListener
                 'total_tickets' => $order->tickets->count(),
                 'paid_at' => $order->paid_at->toISOString(),
                 'delivery_method' => $order->delivery_method->value,
-                'download_link_token' => $downloadLink->token,
+                'download_link_id' => $downloadLink->id,
                 'download_link_expires_at' => $downloadLink->expires_at->toISOString(),
             ]);
         } catch (Exception $e) {
@@ -193,9 +193,9 @@ final class OrderPaidListener
                 mailableData: [$order, false],
             );
 
-            Log::info('Email de confirmation envoyé via Job (email only)', [
+            Log::info('Email de confirmation mis en file (email only)', [
                 'order_id' => $order->id,
-                'email' => $order->email,
+                'email' => LogMask::email($order->email),
             ]);
         } catch (Exception $e) {
             Log::error('Échec envoi email de confirmation', [
@@ -212,18 +212,13 @@ final class OrderPaidListener
     private function sendWhatsAppOnly(Order $order, TicketDownloadLink $downloadLink): void
     {
         try {
-            $downloadService = app(TicketDownloadService::class);
-            $downloadUrl = $downloadService->getDownloadUrl($downloadLink);
-            $qrImageUrls = $downloadService->getQrImageUrls($downloadLink);
-            $whatsappLink = $downloadService->getWhatsAppLink($order, $downloadLink);
-
+            // Les URLs portent le token du lien : elles valent un billet et ne
+            // sont donc jamais journalisées — seul l'identifiant du lien l'est.
             Log::info('Lien téléchargement généré (WhatsApp mode)', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
-                'phone' => $order->phone,
-                'download_url' => $downloadUrl,
-                'qr_image_urls' => $qrImageUrls,
-                'whatsapp_link' => $whatsappLink,
+                'phone' => LogMask::phone($order->phone),
+                'download_link_id' => $downloadLink->id,
                 'expires_at' => $downloadLink->expires_at->toISOString(),
             ]);
 
@@ -249,20 +244,12 @@ final class OrderPaidListener
                 mailableData: [$order, true],
             );
 
-            // Generate download and WhatsApp links
-            $downloadService = app(TicketDownloadService::class);
-            $downloadUrl = $downloadService->getDownloadUrl($downloadLink);
-            $qrImageUrls = $downloadService->getQrImageUrls($downloadLink);
-            $whatsappLink = $downloadService->getWhatsAppLink($order, $downloadLink);
-
-            Log::info('Email + liens téléchargement envoyés (both mode)', [
+            Log::info('Email mis en file + lien téléchargement généré (both mode)', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
-                'email' => $order->email,
-                'phone' => $order->phone,
-                'download_url' => $downloadUrl,
-                'qr_image_urls' => $qrImageUrls,
-                'whatsapp_link' => $whatsappLink,
+                'email' => LogMask::email($order->email),
+                'phone' => LogMask::phone($order->phone),
+                'download_link_id' => $downloadLink->id,
                 'expires_at' => $downloadLink->expires_at->toISOString(),
             ]);
         } catch (Exception $e) {

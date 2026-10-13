@@ -29,6 +29,10 @@ final class NewOrderNotification extends Notification
     }
 
     /**
+     * Seuls l'identifiant et le numéro de la commande sont stockés : la ligne de
+     * `notifications` survit à la commande, et y figer le modèle entier
+     * conservait les coordonnées de l'acheteur bien au-delà de leur utilité.
+     *
      * @param  mixed  $notifiable
      * @return array<string, mixed>
      */
@@ -39,7 +43,8 @@ final class NewOrderNotification extends Notification
             'content' => $this->content,
             'action' => $this->action,
             'url' => $this->url,
-            'order' => $this->order,
+            'order_id' => $this->order->getKey(),
+            'order_number' => $this->order->getAttribute('order_number'),
         ];
     }
 

@@ -100,3 +100,17 @@ it('requires the confirmation to match', function (): void {
         'password_confirmation' => 'AutreChose1!',
     ])->assertStatus(422)->assertJsonValidationErrors(['password']);
 });
+
+it('answers an unknown e-mail exactly like an invalid token', function (): void {
+    $payload = fn (string $email): array => [
+        'email' => $email,
+        'token' => 'jeton-bidon',
+        'password' => 'NouveauMotDePasse1!',
+        'password_confirmation' => 'NouveauMotDePasse1!',
+    ];
+
+    $unknown = $this->postJson('/api/v1/auth/reset-password', $payload('inconnu@example.com'))->assertStatus(422);
+    $badToken = $this->postJson('/api/v1/auth/reset-password', $payload($this->user->email))->assertStatus(422);
+
+    expect($unknown->json('message'))->toBe($badToken->json('message'));
+});

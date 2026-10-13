@@ -70,6 +70,7 @@ final class TicketDownloadController extends Controller
 
         return TicketDownloadResource::collection($query->paginate(15));
     }
+
     /**
      * Download ticket PDF.
      */
@@ -110,7 +111,7 @@ final class TicketDownloadController extends Controller
         Log::info('Ticket PDF downloaded', [
             'order_id' => $order->id,
             'order_number' => $order->order_number,
-            'token' => $token,
+            'download_link_id' => $link->id,
             'download_count' => $link->download_count,
         ]);
 
@@ -149,7 +150,7 @@ final class TicketDownloadController extends Controller
         Log::info('QR code image served', [
             'ticket_id' => $ticket->id,
             'ticket_number' => $ticket->ticket_number,
-            'token' => $token,
+            'download_link_id' => $link->id,
         ]);
 
         // `inline` et non `attachment` : la même URL est lue dans un `<img>` sur
@@ -168,11 +169,11 @@ final class TicketDownloadController extends Controller
         $frontendUrl = config('app.frontend_url', config('app.url'));
 
         return response()->view('errors.download-error', [
-            'title'       => 'Lien expiré',
-            'icon'        => '⏰',
-            'iconClass'   => 'icon--expired',
-            'message'     => 'Ce lien de téléchargement a expiré. Veuillez contacter le support ou demander un nouveau lien depuis votre espace.',
-            'actionUrl'   => $frontendUrl,
+            'title' => 'Lien expiré',
+            'icon' => '⏰',
+            'iconClass' => 'icon--expired',
+            'message' => 'Ce lien de téléchargement a expiré. Veuillez contacter le support ou demander un nouveau lien depuis votre espace.',
+            'actionUrl' => $frontendUrl,
             'actionLabel' => "Retour à l'accueil",
         ], 410);
     }
@@ -185,11 +186,11 @@ final class TicketDownloadController extends Controller
         $frontendUrl = config('app.frontend_url', config('app.url'));
 
         return response()->view('errors.download-error', [
-            'title'       => 'Limite de téléchargements atteinte',
-            'icon'        => '⚠️',
-            'iconClass'   => 'icon--limit',
-            'message'     => "Vous avez atteint le nombre maximum de téléchargements pour ce lien. Veuillez contacter le support si vous avez besoin d'un nouvel accès.",
-            'actionUrl'   => $frontendUrl,
+            'title' => 'Limite de téléchargements atteinte',
+            'icon' => '⚠️',
+            'iconClass' => 'icon--limit',
+            'message' => "Vous avez atteint le nombre maximum de téléchargements pour ce lien. Veuillez contacter le support si vous avez besoin d'un nouvel accès.",
+            'actionUrl' => $frontendUrl,
             'actionLabel' => "Retour à l'accueil",
         ], 429);
     }

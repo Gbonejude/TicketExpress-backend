@@ -35,9 +35,10 @@ class ResetPasswordAction implements Action
         );
 
         if ($status !== Password::PASSWORD_RESET) {
+            // Même message pour un token invalide et un e-mail inconnu : les
+            // distinguer confirmerait quelles adresses ont un compte.
             throw new ApiException(match ($status) {
-                Password::INVALID_TOKEN => 'Invalid or expired reset token.',
-                Password::INVALID_USER => 'No account found for this email.',
+                Password::INVALID_TOKEN, Password::INVALID_USER => 'Invalid or expired reset token.',
                 default => 'Unable to reset password.',
             }, 422);
         }
