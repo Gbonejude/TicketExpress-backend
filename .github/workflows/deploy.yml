@@ -50,7 +50,10 @@ jobs:
             # Protéger .env et .htaccess du nettoyage
             git clean -df -e .htaccess -e public/.htaccess -e .env
             rm -f bootstrap/cache/*.php
-            git pull origin develop
+            # fetch + reset plutôt que pull : le serveur reflète exactement GitHub,
+            # même après une réécriture d'historique (un pull refuserait de fusionner).
+            git fetch origin develop
+            git reset --hard origin/develop
 
             echo '=== 3. Installation des dépendances Composer ==='
             scl enable php82 -- composer install --no-dev --optimize-autoloader --no-interaction
