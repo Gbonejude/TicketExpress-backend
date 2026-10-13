@@ -1,26 +1,26 @@
-# 🧪 TicketExpress API Test Scenarios
+# TicketExpress API Test Scenarios
 
 Ce dossier contient les scénarios de test pour l'API TicketExpress, utilisables avec le MCP `fetch` tool.
 
 ---
 
-## 📁 Fichiers Disponibles
+## Fichiers Disponibles
 
-### 1. ✅ `test-scenarios-critical.json` (RECOMMANDÉ)
+### 1. `test-scenarios-critical.json` (RECOMMANDÉ)
 **Scénarios critiques** - 20 endpoints les plus importants
 
-- ✅ Authentication complète (admin, client OTP)
-- ✅ Création d'événement complet
-- ✅ Création et achat de tickets
-- ✅ Check-in de tickets
-- ✅ Gestion des coupons
-- ✅ Système de reviews
-- ✅ Withdrawals
-- ✅ Gestion des rôles et permissions
+- Authentication complète (admin, client OTP)
+- Création d'événement complet
+- Création et achat de tickets
+- Check-in de tickets
+- Gestion des coupons
+- Système de reviews
+- Withdrawals
+- Gestion des rôles et permissions
 
 **Usage:** Tests rapides des fonctionnalités principales avec MCP fetch ou PowerShell
 
-### 2. 📦 `../public/docs/collection.json` (COLLECTION COMPLÈTE)
+### 2. `../public/docs/collection.json` (COLLECTION COMPLÈTE)
 **Tous les endpoints** - 82+ endpoints
 
 Collection Postman officielle générée par Scribe. **C'est ici que se trouvent TOUS les endpoints!**
@@ -30,15 +30,15 @@ Collection Postman officielle générée par Scribe. **C'est ici que se trouvent
 - Utiliser avec Newman CLI
 - Interface web: `http://localhost:8000/docs`
 
-### 3. 📚 `HOW_TO_TEST_ALL_ENDPOINTS.md`
+### 3. `HOW_TO_TEST_ALL_ENDPOINTS.md`
 Guide complet expliquant comment tester les 84 endpoints avec les 3 méthodes disponibles.
 
-### 4. 📖 `USE_SCRIBE_COLLECTION.md`
+### 4. `USE_SCRIBE_COLLECTION.md`
 Explication sur pourquoi utiliser la collection Scribe pour les tests complets.
 
 ---
 
-## 🎯 Quelle Fichier Utiliser?
+## Quelle Fichier Utiliser?
 
 ### Tests Rapides (< 5 min)
 → **`test-scenarios-critical.json`** (20 endpoints)
@@ -54,7 +54,7 @@ Explication sur pourquoi utiliser la collection Scribe pour les tests complets.
 
 ---
 
-## 🚀 Utilisation
+## Utilisation
 
 ### Avec Kiro AI (MCP Fetch)
 ```
@@ -83,7 +83,7 @@ newman run public/docs/collection.json
 
 ---
 
-## 📋 Liste des Endpoints
+## Liste des Endpoints
 
 **Scénarios Critiques (20):**
 1. Admin authentication
@@ -105,7 +105,7 @@ newman run public/docs/collection.json
 
 ---
 
-## 🔑 Variables Disponibles
+## Variables Disponibles
 
 Les scénarios utilisent des variables pour réutiliser les données:
 
@@ -122,7 +122,7 @@ Les scénarios utilisent des variables pour réutiliser les données:
 
 ---
 
-## 🧪 Comptes de Test
+## Comptes de Test
 
 Les comptes suivants sont disponibles après le seeding:
 
@@ -152,7 +152,7 @@ Les comptes suivants sont disponibles après le seeding:
 
 ---
 
-## 📊 Résumé des Fichiers
+## Résumé des Fichiers
 
 ```
 postman/
@@ -167,7 +167,7 @@ public/docs/
 
 ---
 
-## 🚨 Important
+## Important
 
 **Pour tester TOUS les 84 endpoints:**
 → Utilisez `public/docs/collection.json` (Collection Scribe)
@@ -175,11 +175,11 @@ public/docs/
 **Pour tester rapidement:**
 → Utilisez `test-scenarios-critical.json` (20 endpoints critiques)
 
-**Les deux fichiers sont complémentaires!** ✅
+**Les deux fichiers sont complémentaires!** 
 
 ---
 
-## 📚 Ressources
+## Ressources
 
 - **API Documentation:** `http://localhost:8000/docs`
 - **Postman Collection:** `public/docs/collection.json`
@@ -190,5 +190,5 @@ public/docs/
 
 **Créé le:** 29 juin 2026  
 **Version:** 2.0.0  
-**Status:** ✅ Complet avec référence à collection Scribe
+**Status:** Complet avec référence à collection Scribe
 

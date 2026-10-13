@@ -1,13 +1,13 @@
-# 🎫 TicketExpress Backend API
+# TicketExpress Backend API
 
 **Version:** 1.0.0  
-**Status:** ✅ Production Ready  
+**Status:** Production Ready  
 **Framework:** Laravel 12  
 **Database:** MySQL 5.7+
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [About](#about)
 - [Features](#features)
@@ -26,42 +26,42 @@
 
 ---
 
-## 🎯 About
+## About
 
 TicketExpress is a comprehensive ticket management platform for event organizers. The backend API provides a robust foundation for creating, managing, and selling event tickets with features like QR code check-ins, multi-date events, promotional pricing, and secure payment processing.
 
 ### Key Capabilities
-- 🎟️ **Event Management** - Create and manage events with rich details
-- 📅 **Multi-Date Events** - Support for recurring or multiple occurrence events
-- 💳 **Order Processing** - Secure order management with payment integration
-- 🔒 **QR Check-In System** - Physical and online event access verification
-- 💰 **Promotions** - Temporal pricing and coupon systems
-- 📊 **Analytics** - Organizer dashboard with revenue tracking
-- 📧 **Email System** - Automated notifications and ticket delivery
-- 🔐 **RBAC** - Role-based access control (Super Admin, Admin, Organizer, Client)
+- **Event Management** - Create and manage events with rich details
+- **Multi-Date Events** - Support for recurring or multiple occurrence events
+- **Order Processing** - Secure order management with payment integration
+- **QR Check-In System** - Physical and online event access verification
+- **Promotions** - Temporal pricing and coupon systems
+- **Analytics** - Organizer dashboard with revenue tracking
+- **Email System** - Automated notifications and ticket delivery
+- **RBAC** - Role-based access control (Super Admin, Admin, Organizer, Client)
 
 ---
 
-## ✨ Features
+## Features
 
 ### Core Features
-- ✅ **Authentication** - OTP-based login, registration, password reset
-- ✅ **Event Management** - CRUD, publish/unpublish, cancellation
-- ✅ **Ticket Types** - Rich descriptions, benefits, location details
-- ✅ **Orders** - Complete order lifecycle with timestamps
-- ✅ **Payments** - Secure payment processing
-- ✅ **Check-Ins** - QR code scanning for physical/online events
-- ✅ **Reviews** - Rating and review system for events
-- ✅ **Withdrawals** - Organizer payment withdrawal requests
-- ✅ **Coupons** - Discount and promotional codes
-- ✅ **Notifications** - In-app notification system
+- **Authentication** - OTP-based login, registration, password reset
+- **Event Management** - CRUD, publish/unpublish, cancellation
+- **Ticket Types** - Rich descriptions, benefits, location details
+- **Orders** - Complete order lifecycle with timestamps
+- **Payments** - Secure payment processing
+- **Check-Ins** - QR code scanning for physical/online events
+- **Reviews** - Rating and review system for events
+- **Withdrawals** - Organizer payment withdrawal requests
+- **Coupons** - Discount and promotional codes
+- **Notifications** - In-app notification system
 
 ### Advanced Features
-- ✅ **Feature 3:** QR Check-In System (physical + online)
-- ✅ **Feature 4:** Temporal Promotions (price reductions with dates)
-- ✅ **Feature 5:** Multi-Date Events (EventOccurrence model)
-- ✅ **Feature 6:** Availability Status (6 automatic statuses)
-- ✅ **Feature 7:** Rich Ticket Descriptions (benefits, featured badges)
+- **Feature 3:** QR Check-In System (physical + online)
+- **Feature 4:** Temporal Promotions (price reductions with dates)
+- **Feature 5:** Multi-Date Events (EventOccurrence model)
+- **Feature 6:** Availability Status (6 automatic statuses)
+- **Feature 7:** Rich Ticket Descriptions (benefits, featured badges)
 
 ### Email Notifications (13 Mailables)
 - Ticket confirmation with PDF + QR code
@@ -73,7 +73,7 @@ TicketExpress is a comprehensive ticket management platform for event organizers
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Backend
 - **Framework:** Laravel 12
@@ -98,26 +98,26 @@ TicketExpress is a comprehensive ticket management platform for event organizers
 
 ---
 
-## 📊 Project Status
+## Project Status
 
 ### Quality Metrics
 | Metric | Status | Details |
 |--------|--------|---------|
-| **API Coverage** | ✅ 100% | 84/84 endpoints tested |
-| **PHPStan** | ✅ 0 errors | Level 5 analysis |
-| **Tests** | ✅ 242/242 passing | 100% success rate |
-| **Laravel Pint** | ✅ Passing | PSR-12 compliant |
-| **Migrations** | ✅ 26 consolidated | Optimized structure |
+| **API Coverage** | 100% | 84/84 endpoints tested |
+| **PHPStan** | 0 errors | Level 5 analysis |
+| **Tests** | 242/242 passing | 100% success rate |
+| **Laravel Pint** | Passing | PSR-12 compliant |
+| **Migrations** | 26 consolidated | Optimized structure |
 
 ### Project Cleanup
-- ✅ Root directory: 19 essential files (was 188)
-- ✅ Documentation organized in `docs/`
-- ✅ Scripts centralized in `scripts/`
-- ✅ Professional structure
+- Root directory: 19 essential files (was 188)
+- Documentation organized in `docs/`
+- Scripts centralized in `scripts/`
+- Professional structure
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - PHP 8.2+
@@ -176,7 +176,7 @@ The API will be available at `http://localhost:8000`
 
 ---
 
-## 📚 API Documentation
+## API Documentation
 
 ### Access Documentation
 - **Interactive Docs:** `http://localhost:8000/docs`
@@ -201,7 +201,7 @@ php artisan scribe:generate
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Run All Tests
 ```bash
@@ -238,7 +238,7 @@ php artisan db:seed --class=TestUsersSeeder
 
 ---
 
-## 🗄️ Database
+## Database
 
 ### Migrations
 The project uses **26 consolidated migrations** (optimized from 41).
@@ -268,7 +268,7 @@ php artisan db:seed --class=WithdrawalTestSeeder # Sample withdrawals
 
 ---
 
-## ⚙️ Queue Workers
+## Queue Workers
 
 ### Start Queue Workers (Windows)
 ```powershell
@@ -292,7 +292,7 @@ php artisan queue:work --queue=emails,notifications,default
 
 ---
 
-## ⏰ Scheduled Tasks
+## Scheduled Tasks
 
 Scheduled commands are declared in `App\Bootstrappers\ScheduleBootstrapper`
 (wired from `bootstrap/app.php`).
@@ -366,7 +366,7 @@ decides.
 
 ---
 
-## 📈 Monitoring
+## Monitoring
 
 ### Laravel Pulse Dashboard
 Access real-time monitoring at `http://localhost:8000/pulse`
@@ -386,7 +386,7 @@ tail -f storage/logs/laravel.log
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 TicketExpress-backend/
@@ -440,7 +440,7 @@ TicketExpress-backend/
 
 ---
 
-## 📖 Development Guidelines
+## Development Guidelines
 
 ### Code Style
 - **PSR-12** compliant (enforced by Laravel Pint)
@@ -494,7 +494,7 @@ composer clean
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 ### Development Workflow
 1. Create a feature branch
@@ -505,18 +505,18 @@ composer clean
 6. Push and create Pull Request
 
 ### Quality Requirements
-- ✅ All tests must pass (242/242)
-- ✅ PHPStan must pass with 0 errors
-- ✅ Laravel Pint must pass
-- ✅ New features must include tests
-- ✅ API changes must update Scribe docs
+- All tests must pass (242/242)
+- PHPStan must pass with 0 errors
+- Laravel Pint must pass
+- New features must include tests
+- API changes must update Scribe docs
 
 ### AI Assistant Context
 See `AGENTS.md` for AI assistant guidelines and project context for Kiro, Claude, or other AI tools.
 
 ---
 
-## 📝 Key Documentation Files
+## Key Documentation Files
 
 ### Essential Reading
 - **`AGENTS.md`** - AI assistant guidelines (Laravel Boost rules)
@@ -531,29 +531,29 @@ See `AGENTS.md` for AI assistant guidelines and project context for Kiro, Claude
 
 ---
 
-## 🔐 Security
+## Security
 
 ### Best Practices
-- ✅ Laravel Sanctum for API authentication
-- ✅ CORS configured properly
-- ✅ Rate limiting on sensitive endpoints
-- ✅ Input validation on all requests
-- ✅ SQL injection prevention (Eloquent ORM)
-- ✅ XSS protection (Blade escaping)
-- ✅ CSRF protection on web routes
+- Laravel Sanctum for API authentication
+- CORS configured properly
+- Rate limiting on sensitive endpoints
+- Input validation on all requests
+- SQL injection prevention (Eloquent ORM)
+- XSS protection (Blade escaping)
+- CSRF protection on web routes
 
 ### Reporting Vulnerabilities
 If you discover a security vulnerability, please email the development team immediately.
 
 ---
 
-## 📄 License
+## License
 
 This project is proprietary software. All rights reserved.
 
 ---
 
-## 👥 Team
+## Team
 
 **Developed by:** ZESGIS Team  
 **AI Assistant:** Kiro AI  
@@ -562,15 +562,15 @@ This project is proprietary software. All rights reserved.
 
 ---
 
-## 🎉 Achievements
+## Achievements
 
-- ✅ **100% API Coverage** (84/84 endpoints)
-- ✅ **0 PHPStan Errors** (cleaned from 224)
-- ✅ **242/242 Tests Passing**
-- ✅ **26 Optimized Migrations** (from 41)
-- ✅ **19 Root Files** (from 188, -89.9%)
-- ✅ **Production Ready**
+- **100% API Coverage** (84/84 endpoints)
+- **0 PHPStan Errors** (cleaned from 224)
+- **242/242 Tests Passing**
+- **26 Optimized Migrations** (from 41)
+- **19 Root Files** (from 188, -89.9%)
+- **Production Ready**
 
 ---
 
-**Ready to power amazing events! 🎫🚀**
+**Ready to power amazing events! **
